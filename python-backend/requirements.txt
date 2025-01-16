@@ -1,0 +1,14 @@
+
+langchain                                ==0.3.14
+langchain-community                      ==0.3.13
+langchain-core                           ==0.3.29
+langchain-google-genai                   ==2.0.8
+langchain-huggingface                    ==0.1.2
+langchain-pinecone                       ==0.2.2
+langchain-tests                          ==0.3.8
+langchain-text-splitters                 ==0.3.4                                                                                                  
+pinecone                                 ==5.4.2
+pinecone-client                          ==3.2.2
+pinecone-notebooks                       ==0.1.1
+pinecone-plugin-inference                ==3.1.0
+pinecone-plugin-interface                ==0.0.7                                     
