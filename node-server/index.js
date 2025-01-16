@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/chat", chatRoutes);
+app.use("/api/chats", chatRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;
