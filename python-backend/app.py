@@ -3,7 +3,7 @@ from pinecone import Pinecone, ServerlessSpec
 import os
 import time
 from dotenv import load_dotenv
-from langchain_core.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 # from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import google.generativeai as genai
