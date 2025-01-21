@@ -2,20 +2,25 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const connectDB = require("./config/db");
-const dotenv = require("./config/dotenvConfig");
+const dotenv = require("dotenv");
 
-const authRoutes = require("./routes/authRoutes");
-const chatRoutes = require("./routes/chatRoutes");
+// Load environment variables
+dotenv.config();
 
-dotenv(); // Load environment variables
-connectDB(); // Connect to MongoDB
+// Connect to MongoDB
+connectDB();
 
+// Initialize Express app
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Routes
+const authRoutes = require("./routes/authRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+
 app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
 

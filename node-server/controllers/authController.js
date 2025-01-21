@@ -70,4 +70,21 @@ const signupUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, signupUser };
+const logoutUser = (req, res) => {
+  try {
+    // Since JWTs are stateless, we simply inform the client to discard the token.
+    res.status(200).json({
+      success: true,
+      message: "User logged out successfully. Please discard your token.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { loginUser, signupUser, logoutUser };

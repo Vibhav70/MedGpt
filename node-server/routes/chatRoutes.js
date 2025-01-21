@@ -1,6 +1,7 @@
 const express = require("express");
 const { checkCredits } = require("../middleware/checkCredits");
 const {
+  getChatsByCustomerId,
   saveChat,
   getAllChats,
   getChatById,
@@ -8,6 +9,7 @@ const {
   deleteChatById,
   purchaseCredits,
 } = require("../controllers/chatController");
+
 const router = express.Router();
 
 // Route to add a new chat entry
@@ -15,6 +17,9 @@ router.post("/", checkCredits, saveChat);
 
 // Route to retrieve all chat entries
 router.get("/", getAllChats);
+
+// Retreive by CustomerID
+router.get("/customer/:customer_id", getChatsByCustomerId);
 
 // Route to retrieve a specific chat by ID
 router.get("/:id", getChatById);
