@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const generateCustomerId = require("../utils/generateId");
@@ -25,7 +26,24 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid username or password" });
     }
 
-    res.status(200).json({ customer_id: user.customer_id });
+    // Generate a JWT token
+    const token = jwt.sign(
+      { id: user._id, username: user.username, customer_id: user.customer_id },
+      process.env.JWT_SECRET, // Make sure you set JWT_SECRET in your .env file
+      { expiresIn: "1h" } // Token expires in 1 hour
+    );
+
+    // Respond with the token and user details
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        token,
+        customer_id: user.customer_id,
+        username: user.username,
+        credits: user.credits,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
