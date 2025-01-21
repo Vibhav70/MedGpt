@@ -1,5 +1,5 @@
 const express = require("express");
-const { checkCredits } = require("../middleware/checkCredits");
+const { checkCredits } = require("../middleware/checkCredits.js");
 const {
   getChatsByCustomerId,
   saveChat,
