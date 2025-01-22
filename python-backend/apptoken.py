@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import google.generativeai as genai
+import tiktoken  # OpenAI tokenizer
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -34,6 +35,9 @@ vectorstore = PineconeVectorStore(
     text_key="text"  # Ensure this matches your Pinecone schema
 )
 
+# OpenAI tokenizer initialization
+tokenizer = tiktoken.get_encoding("cl100k_base")  # Use the appropriate tokenizer for the embedding model
+
 # Chat session state initialization
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -45,24 +49,19 @@ system_message = (
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
 
-# Function to generate a response from Google Gemini
-def generate_answer(system_message, chat_history, prompt):
-    model = genai.GenerativeModel("gemini-pro")
+# Function to calculate tokens
+def count_tokens(text):
+    return len(tokenizer.encode(text))
 
-    # Combine system message and chat history
-    full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
-    
-    # Generate the response
-    response = model.generate_content(full_prompt).text
-    return response
-
-# Function to retrieve relevant context from vectorstore
+# Function to retrieve relevant context with metadata
 def get_relevant_passage(query, vectorstore, max_results=3):
-    results = vectorstore.similarity_search(query, k=max_results,include_metadata=True)
+    results = vectorstore.similarity_search(query, k=max_results)
     if results:
         # Combine passages with essential metadata
         context = "\n".join(
-            f"- {result.metadata.get('book_title', 'Unknown Book')} (Page {result.metadata.get('chunk_index', 'Unknown')}): "
+            f"- Title: {result.metadata.get('book_title', 'Unknown Book')}, "
+            f"Author: {result.metadata.get('author', 'Unknown Author')}, "
+            f"Page: {result.metadata.get('page_number', 'Unknown')}:\n"
             f"{result.page_content.strip()}"
             for result in results if result.page_content
         )
@@ -83,6 +82,29 @@ def make_rag_prompt(user_input, context, is_question):
         f"### Response:"
     )
 
+# Generate a response from Google Gemini and append metadata to the final response
+def generate_answer(system_message, chat_history, prompt, relevant_text):
+    model = genai.GenerativeModel("gemini-pro")
+
+    # Combine system message and chat history
+    full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
+    
+    # Count input tokens
+    input_tokens = count_tokens(full_prompt)
+    
+    # Generate the response
+    response = model.generate_content(full_prompt).text
+    
+    # Count output tokens
+    output_tokens = count_tokens(response)
+    
+    # Print token usage
+    print(f"Input Tokens: {input_tokens}, Output Tokens: {output_tokens}, Total Tokens: {input_tokens + output_tokens}")
+    
+    # Append metadata for transparency
+    response_with_metadata = f"{response}\n\n### Source(s):\n{relevant_text}"
+    return response_with_metadata
+
 # Function to detect if the input is a question
 def is_question(input_text):
     question_words = ["what", "why", "how", "when", "where", "who", "is", "are", "does", "do", "can", "should"]
@@ -92,7 +114,7 @@ def is_question(input_text):
 def update_chat_history(history, user_input, assistant_response, max_history=5):
     history.append(f"User: {user_input}")
     history.append(f"Assistant: {assistant_response}")
-    return history[-2 * max_history:]  # Retain only the last `max_history` exchanges
+    return history[-2 * max_history:]  # Retain only the last max_history exchanges
 
 # Streamlit interface
 st.title("Medical Assistant Chatbot")
@@ -109,7 +131,7 @@ if st.button("Get Answer"):
         prompt = make_rag_prompt(user_input, relevant_text, input_is_question)
 
         # Generate a response
-        answer = generate_answer(system_message, st.session_state.chat_history, prompt)
+        answer = generate_answer(system_message, st.session_state.chat_history, prompt, relevant_text)
 
         # Update chat history
         st.session_state.chat_history = update_chat_history(
