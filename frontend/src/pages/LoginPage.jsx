@@ -1,24 +1,20 @@
 import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { login } from "../utils/api";
+import { AuthContext } from "../context/AuthProvider";
 
 const LoginPage = () => {
-  const { login } = useContext(AuthContext);
+  const { login: loginContext } = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        login(data.data.token);
+      const res = await login(username, password);
+      if (res.data.success) {
+        loginContext(res.data.data.token); // Pass token to AuthContext
       } else {
-        alert(data.message);
+        alert(res.data.message);
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -26,24 +22,22 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form className="p-8 bg-white shadow-md" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-bold mb-4">Login</h2>
+    <div>
+      <h1>Login</h1>
+      <form onSubmit={handleLogin}>
         <input
           type="text"
-          placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="block w-full p-2 mb-4 border"
+          placeholder="Username"
         />
         <input
           type="password"
-          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="block w-full p-2 mb-4 border"
+          placeholder="Password"
         />
-        <button className="w-full p-2 bg-blue-500 text-white">Login</button>
+        <button type="submit">Login</button>
       </form>
     </div>
   );

@@ -1,28 +1,33 @@
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { Link } from "react-router-dom";
+import { AuthContext } from "../context/AuthProvider";
+import { getCredits } from "../utils/api";
 
 const Header = () => {
   const { user, credits, logout } = useContext(AuthContext);
 
+  const refreshCredits = async () => {
+    try {
+      const res = await getCredits();
+      if (res.data.success) {
+        alert(`You have ${res.data.data.credits} credits!`);
+      }
+    } catch (error) {
+      console.error("Failed to refresh credits:", error);
+    }
+  };
+
   return (
-    <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
-      <h1 className="text-2xl font-bold">MedGPT</h1>
+    <header>
+      <h1>MedGPT</h1>
       <nav>
-        <Link className="mr-4" to="/">Home</Link>
-        <Link className="mr-4" to="/about">About Us</Link>
-        {user && <Link className="mr-4" to="/chat">Chat</Link>}
-      </nav>
-      <div>
-        {user ? (
+        {user && (
           <>
-            <span className="mr-4">Credits: {credits}</span>
-            <button onClick={logout} className="bg-red-500 px-2 py-1">Logout</button>
+            <span>Credits: {credits}</span>
+            <button onClick={refreshCredits}>Refresh Credits</button>
+            <button onClick={logout}>Logout</button>
           </>
-        ) : (
-          <Link to="/login" className="bg-blue-500 px-2 py-1">Login</Link>
         )}
-      </div>
+      </nav>
     </header>
   );
 };

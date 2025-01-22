@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 import jwtDecode from "jwt-decode";
 import PropTypes from "prop-types";
 
@@ -15,9 +15,9 @@ const AuthProvider = ({ children }) => {
       setUser(decoded);
       fetchCredits();
     }
-  }, [token]);
+  }, [token, fetchCredits]);
 
-  const fetchCredits = async () => {
+  const fetchCredits = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/credits", {
         headers: { Authorization: `Bearer ${token}` },
@@ -27,7 +27,7 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to fetch credits:", error);
     }
-  };
+  }, [token]);
 
   const login = (newToken) => {
     localStorage.setItem("token", newToken);
@@ -48,9 +48,8 @@ const AuthProvider = ({ children }) => {
   );
 };
 
-// Add PropTypes validation
 AuthProvider.propTypes = {
-    children: PropTypes.node.isRequired,
-  };
+  children: PropTypes.node.isRequired,
+};
 
 export default AuthProvider;

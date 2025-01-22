@@ -5,7 +5,7 @@ import AboutUs from "./pages/AboutUs";
 import LoginPage from "./pages/LoginPage";
 import ChatPage from "./pages/ChatPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AuthProvider from "./context/AuthContext";
+import AuthProvider from "./context/AuthProvider";
 
 const App = () => (
   <AuthProvider>
