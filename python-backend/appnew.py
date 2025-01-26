@@ -58,16 +58,20 @@ def generate_answer(system_message, chat_history, prompt):
 
 # Function to retrieve relevant context from vectorstore
 def get_relevant_passage(query, vectorstore, max_results=3):
-    results = vectorstore.similarity_search(query, k=max_results,include_metadata=True)
+    # Use similarity_search_with_score to retrieve results with metadata and scores
+    results = vectorstore.similarity_search_with_score(query, k=max_results)
+
     if results:
         # Combine passages with essential metadata
         context = "\n".join(
-            f"- {result.metadata.get('book_title', 'Unknown Book')} (Page {result.metadata.get('chunk_index', 'Unknown')}): "
-            f"{result.page_content.strip()}"
-            for result in results if result.page_content
+            f"- {res.metadata.get('book_title', 'Unknown Book')} (Page {res.metadata.get('chunk_index', 'Unknown')}): "
+            f"{res.page_content.strip()} [SIM={score:.3f}]"
+            for res, score in results if res.page_content
         )
         return context
+
     return "No relevant context found."
+
 
 # Function to create the RAG prompt for topics or questions
 def make_rag_prompt(user_input, context, is_question):
@@ -89,7 +93,7 @@ def is_question(input_text):
     return any(input_text.lower().startswith(word) for word in question_words)
 
 # Function to manage chat history length
-def update_chat_history(history, user_input, assistant_response, max_history=5):
+def update_chat_history(history, user_input, assistant_response, max_history=3):
     history.append(f"User: {user_input}")
     history.append(f"Assistant: {assistant_response}")
     return history[-2 * max_history:]  # Retain only the last `max_history` exchanges
