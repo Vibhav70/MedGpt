@@ -12,3 +12,4 @@ pinecone-client                          ==3.2.2
 pinecone-notebooks                       ==0.1.1
 pinecone-plugin-inference                ==3.1.0
 pinecone-plugin-interface                ==0.0.7                                     
+pymongo[srv]==3.12
