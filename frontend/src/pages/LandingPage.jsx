@@ -2,7 +2,7 @@ import HeaderMain from "../components/HeaderMain";
 
 const LandingPage = () => {
   return (
-    <div className="bg-gradient-to-br from-[#ec4899e3] to-pink-500 via-violet-600 min-h-screen flex flex-col items-center text-white pb-12">
+    <div className="bg-gradient-to-br from-[#141131] via-[#720b36] to-black min-h-screen flex flex-col items-center text-white pt-6 pb-12">
       <HeaderMain />
       <section className="text-center py-20 px-6 max-w-4xl">
         <h1 className="text-4xl md:text-6xl font-extrabold drop-shadow-lg animate-fade-in">MedBookGPT</h1>
