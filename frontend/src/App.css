@@ -1,42 +1,39 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #ededed;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+::-webkit-scrollbar{
+  width: 1px;
 }
 
-.card {
-  padding: 2em;
+::-webkit-scrollbar-track{
+  background: transparent;
 }
 
-.read-the-docs {
-  color: #888;
+::-webkit-scrollbar-thumb{
+  background: transparent;
+}
+
+.decor{
+  background: linear-gradient(45deg , #688AE9,#f06f82);
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.colo{
+  background-image: linear-gradient(to right,#688AE9, #C66D7B);
+  -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    background-clip: inherit;
 }

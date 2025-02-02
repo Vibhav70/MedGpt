@@ -50,12 +50,12 @@ system_message = (
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
 
-# # MongoDB configuration
+# MongoDB configuration
 # MONGO_URI = os.getenv("MONGO_URI")
 # MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 # MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME")
 
-# Connect to MongoDB
+# # Connect to MongoDB
 # client = MongoClient(MONGO_URI)
 # db = client[MONGO_DB_NAME]
 # collection = db[MONGO_COLLECTION_NAME]
@@ -169,7 +169,7 @@ async def chat(chat_input: ChatInput, request: Request):
         request.session["chat_history"], user_input, answer
     )
 
-    # # Save query and response to MongoDB
+    # Save query and response to MongoDB
     # chat_record = {
     #     "query": user_input,
     #     "response": answer.strip(),
@@ -180,6 +180,7 @@ async def chat(chat_input: ChatInput, request: Request):
     # Return the answer
     return {"answer": answer.strip()} 
     
+
 
 # To run the FastAPI app, use the following command:
 # uvicorn app:app --reload
