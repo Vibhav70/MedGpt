@@ -11,7 +11,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import google.generativeai as genai
 import tiktoken  # OpenAI tokenizer
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -50,15 +50,15 @@ system_message = (
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
 
-# MongoDB configuration
-MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
-MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME")
+# # MongoDB configuration
+# MONGO_URI = os.getenv("MONGO_URI")
+# MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+# MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME")
 
 # Connect to MongoDB
-client = MongoClient(MONGO_URI)
-db = client[MONGO_DB_NAME]
-collection = db[MONGO_COLLECTION_NAME]
+# client = MongoClient(MONGO_URI)
+# db = client[MONGO_DB_NAME]
+# collection = db[MONGO_COLLECTION_NAME]
 
 # Function to calculate tokens
 def count_tokens(text):
@@ -169,13 +169,13 @@ async def chat(chat_input: ChatInput, request: Request):
         request.session["chat_history"], user_input, answer
     )
 
-    # Save query and response to MongoDB
-    chat_record = {
-        "query": user_input,
-        "response": answer.strip(),
-        "timestamp": time.time()
-    }
-    collection.insert_one(chat_record)
+    # # Save query and response to MongoDB
+    # chat_record = {
+    #     "query": user_input,
+    #     "response": answer.strip(),
+    #     "timestamp": time.time()
+    # }
+    # collection.insert_one(chat_record)
 
     # Return the answer
     return {"answer": answer.strip()} 
