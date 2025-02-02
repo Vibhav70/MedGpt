@@ -6,10 +6,17 @@ langchain-google-genai                   ==2.0.8
 langchain-huggingface                    ==0.1.2
 langchain-pinecone                       ==0.2.2
 langchain-tests                          ==0.3.8
-langchain-text-splitters                 ==0.3.4                                                                                                  
+langchain-text-splitters                 ==0.3.4                                                                                                
 pinecone                                 ==5.4.2
 pinecone-client                          ==3.2.2
 pinecone-notebooks                       ==0.1.1
 pinecone-plugin-inference                ==3.1.0
 pinecone-plugin-interface                ==0.0.7                                     
-pymongo[srv]==3.12
+streamlit
+uvicorn
+fastapi
+dotenv
+pydantic
+tiktoken
+itsdangerous
+pymongo
