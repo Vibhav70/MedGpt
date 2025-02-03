@@ -1,4 +1,8 @@
-import streamlit as st
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from pinecone import Pinecone, ServerlessSpec
 import os
 import time
@@ -6,6 +10,8 @@ from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import google.generativeai as genai
+import tiktoken  # OpenAI tokenizer
+# from pymongo import MongoClient
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -34,9 +40,8 @@ vectorstore = PineconeVectorStore(
     text_key="text"  # Ensure this matches your Pinecone schema
 )
 
-# Chat session state initialization
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+# OpenAI tokenizer initialization
+tokenizer = tiktoken.get_encoding("cl100k_base")  # Use the appropriate tokenizer for the embedding model
 
 # System message for the chatbot
 system_message = (
@@ -45,40 +50,45 @@ system_message = (
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
 
-# Function to generate a response from Google Gemini
-def generate_answer(system_message, chat_history, prompt):
-    model = genai.GenerativeModel("gemini-pro")
+# MongoDB configuration
+# MONGO_URI = os.getenv("MONGO_URI")
+# MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+# MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME")
 
-    # Combine system message and chat history
-    full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
-    
-    # Generate the response
-    response = model.generate_content(full_prompt).text
-    return response
+# # Connect to MongoDB
+# client = MongoClient(MONGO_URI)
+# db = client[MONGO_DB_NAME]
+# collection = db[MONGO_COLLECTION_NAME]
 
-# Function to retrieve relevant context from vectorstore
-def get_relevant_passage(query, vectorstore, max_results=3):
-    # Use similarity_search_with_score to retrieve results with metadata and scores
-    results = vectorstore.similarity_search_with_score(query, k=max_results)
+# Function to calculate tokens
+def count_tokens(text):
+    return len(tokenizer.encode(text))
 
+# Function to retrieve relevant context with metadata
+def get_relevant_passage(query, vectorstore, max_results=3):  
+    results = vectorstore.similarity_search(query, k=max_results)
     if results:
-        # Combine passages with essential metadata
         context = "\n".join(
-            f"- {res.metadata.get('book_title', 'Unknown Book')} (Page {res.metadata.get('chunk_index', 'Unknown')}): "
-            f"{res.page_content.strip()} [SIM={score:.3f}]"
-            for res, score in results if res.page_content
+            f"- {result.page_content.strip()}" 
+            for result in results if result.page_content
         )
         return context
-
     return "No relevant context found."
-
 
 # Function to create the RAG prompt for topics or questions
 def make_rag_prompt(user_input, context, is_question):
     if is_question:
-        instruction = "Answer the user's question in detail using all the information from the provided context. If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.'"
+        instruction = (
+    "Answer the user's question in detail using all the information from the provided context. "
+    "If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.' "
+    "Provide a thorough explanation, include examples if applicable, and add any relevant extra information that might help the user understand the topic better. "
+    "At the end of your response, suggest 1-2 follow-up questions or topics the user might want to explore."
+)
     else:
-        instruction = "Provide all relevant information about the given topic using the provided context. Be detailed and comprehensive."
+        instruction = (
+            "Provide all relevant information about the given topic using the provided context. "
+            "Be detailed, comprehensive, and explanatory. Include examples, related concepts, and any additional information that might be useful to the user."
+        )
     
     return (
         f"{instruction}\n\n"
@@ -87,49 +97,96 @@ def make_rag_prompt(user_input, context, is_question):
         f"### Response:"
     )
 
+def generate_answer(system_message, chat_history, prompt):
+    model = genai.GenerativeModel("gemini-pro")
+
+    # Combine system message and chat history
+    full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
+    
+    # Count input tokens
+    input_tokens = count_tokens(full_prompt)
+    
+    # Generate the response
+    response = model.generate_content(full_prompt).text
+    
+    # Count output tokens
+    output_tokens = count_tokens(response)
+    
+    # Print token usage
+    print(f"Input Tokens: {input_tokens}, Output Tokens: {output_tokens}, Total Tokens: {input_tokens + output_tokens}")
+    
+    return response
+
+
 # Function to detect if the input is a question
 def is_question(input_text):
     question_words = ["what", "why", "how", "when", "where", "who", "is", "are", "does", "do", "can", "should"]
     return any(input_text.lower().startswith(word) for word in question_words)
 
 # Function to manage chat history length
-def update_chat_history(history, user_input, assistant_response, max_history=3):
+def update_chat_history(history, user_input, assistant_response, max_history=5):
     history.append(f"User: {user_input}")
     history.append(f"Assistant: {assistant_response}")
-    return history[-2 * max_history:]  # Retain only the last `max_history` exchanges
+    return history[-2 * max_history:]  # Retain only the last max_history exchanges
 
-# Streamlit interface
-st.title("Medical Assistant Chatbot")
+def format_response(response):
+    # Add bullet points or numbered lists for better readability
+    if "- " not in response and "\n" in response:
+        response = response.replace("\n", "\n- ")
+        response = "- " + response
+    return response
 
-user_input = st.text_input("Enter a question or topic about medical concepts:")
+# FastAPI app
+app = FastAPI()
 
-if st.button("Get Answer"):
-    if user_input.strip():
-        # Detect if the input is a question or a topic
-        input_is_question = is_question(user_input)
+class ChatInput(BaseModel):
+    user_input: str
 
-        # Retrieve relevant context and create a RAG prompt
-        relevant_text = get_relevant_passage(user_input, vectorstore)
-        prompt = make_rag_prompt(user_input, relevant_text, input_is_question)
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "your_secret_key"))
 
-        # Generate a response
-        answer = generate_answer(system_message, st.session_state.chat_history, prompt)
+# Add CORS Middleware (Optional but helpful for frontend interaction)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this to specific domains if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-        # Update chat history
-        st.session_state.chat_history = update_chat_history(
-            st.session_state.chat_history, user_input, answer
-        )
+@app.post("/chat")
+async def chat(chat_input: ChatInput, request: Request):
+    user_input = chat_input.user_input.strip()
+    if not user_input:
+        raise HTTPException(status_code=400, detail="Please enter a valid query or topic.")
 
-        # Display the answer
-        st.write("Answer:", answer)
+    # Initialize chat history if not present
+    if "chat_history" not in request.session:
+        request.session["chat_history"] = []
 
-        # Display chat history
-        with st.expander("Chat History"):
-            for chat in st.session_state.chat_history:
-                st.write(chat)
+    # Detect if the input is a question or a topic
+    input_is_question = is_question(user_input)
 
-        # Display retrieved context for transparency
-        with st.expander("Retrieved Context"):
-            st.write(relevant_text)
-    else:
-        st.error("Please enter a valid query or topic.")
+    # Retrieve relevant context and create a RAG prompt
+    relevant_text = get_relevant_passage(user_input, vectorstore)
+    prompt = make_rag_prompt(user_input, relevant_text, input_is_question)
+
+    # Generate a response
+    answer = generate_answer(system_message, request.session["chat_history"], prompt)
+
+    # Format the response for better readability
+    formatted_answer = format_response(answer)
+
+    # Update chat history
+    request.session["chat_history"] = update_chat_history(
+        request.session["chat_history"], user_input, formatted_answer
+    )
+
+    # Log the relevant text (metadata) for internal use
+    print(f"Relevant Text (Metadata):\n{relevant_text}")
+
+    # Return the formatted answer
+    return {"answer": formatted_answer.strip()}
+
+
+# To run the FastAPI app, use the following command:
+# uvicorn app:app --reload
