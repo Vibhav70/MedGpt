@@ -20,8 +20,8 @@ export default function MessageInput({ onSendMessage, sidebarExpanded, isLoading
   };
 
   return (
-    <div className={`w-full fixed bottom-0 left-0 transition-all duration-300 ${sidebarExpanded ? 'ml-16' : 'ml-2'}`}>
-      <div className="flex items-center bg-[#ECE6F0] rounded-[34px] py-3 px-5 w-full max-w-4xl m-auto mb-1">
+    <div className={`w-full fixed bottom-0 left-0 transition-all duration-300 ${sidebarExpanded ? 'ml-16' : 'ml-0'}`}>
+      <div className="flex items-center bg-[#ECE6F0] rounded-[34px] py-3 px-5 w-[95%] max-w-4xl m-auto mb-1">
         <input
           type="text"
           value={message}
