@@ -190,3 +190,4 @@ async def chat(chat_input: ChatInput, request: Request):
 
 # To run the FastAPI app, use the following command:
 # uvicorn app:app --reload
+# uvicorn appnew:app --host 0.0.0.0 --port 80 

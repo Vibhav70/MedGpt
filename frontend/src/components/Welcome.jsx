@@ -9,12 +9,12 @@ export default function Welcome({ onPromptClick }) {
   ];
 
   return (
-    <div className="items-center justify-center w-fit max-w-4xl m-auto my-24">
+    <div className="items-center justify-center w-fit max-w-4xl m-auto my-24 p-3">
       <div className="w-full pl-2">
         <h2 className="text-5xl mb-4 text-left w-fit mt-0 decor">Hello, Medical Aspirants</h2>
         <p className="text-5xl text-[#CAC4D0] text-left">How can I help you today?</p>
       </div>
-      <div className="flex flex-wrap justify-start md:justify-center text-center sm:ml-2 mt-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-start md:justify-center text-center sm:ml-2 mt-8 gap-4">
         {prompts.map((prompt, index) => (
           <button
             key={index}
