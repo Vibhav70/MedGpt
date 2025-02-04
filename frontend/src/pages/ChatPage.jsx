@@ -6,7 +6,7 @@ import MessageInput from '../components/MessageInput';
 import Header from '../components/Header';
 import Welcome from '../components/Welcome';
 
-const API_URL = "http://127.0.0.1/chat";
+const API_URL = "http://127.0.0.1:8000/chat";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
