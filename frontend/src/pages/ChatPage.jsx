@@ -10,7 +10,7 @@ const API_URL = "http://127.0.0.1:8000/chat";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [displayedText, setDisplayedText] = useState('');
@@ -44,7 +44,7 @@ export default function ChatPage() {
       animateBotReply(botReply);
 
       const newChatEntry = {
-        title: userInput.length > 10 ? userInput.slice(0, 10) + '...' : userInput,
+        title: userInput.length > 25 ? userInput.slice(0, 25) + '...' : userInput,
         date: new Date().toLocaleDateString()
       };
       setChatHistory((prev) => [...prev, newChatEntry]);
@@ -63,14 +63,14 @@ export default function ChatPage() {
     <div className="flex h-screen">
       <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} />
 
-      <div className={`flex flex-col flex-1 bg-white transition-all duration-300 ${sidebarExpanded ? 'ml-16' : 'ml-2'}`}>
+      <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#141131] via-[#720b36] to-black transition-all duration-300 ${sidebarExpanded ? 'ml-16' : 'ml-0'}`}>
         <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} />
 
         <div className="flex-grow">
           {messages.length === 0 ? (
             <Welcome onPromptClick={sendMessage} />
           ) : (
-            <ChatArea messages={messages} displayedText={displayedText} />
+            <ChatArea messages={messages} displayedText={displayedText} isLoading={isLoading} />
           )}
         </div>
 

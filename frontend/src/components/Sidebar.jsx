@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 export default function Sidebar({ isExpanded, chatHistory }) {
   return (
     <div
-      className={`h-screen bg-[#F7F2FA] text-gray-600 transition-all duration-300 fixed top-0 left-0 z-10 ${
-        isExpanded ? 'w-64' : 'w-0'
+      className={`h-screen bg-[#f9efff] text-gray-600 transition-all duration-300 fixed top-0 left-0 z-10 ${
+        isExpanded ? 'w-64' : 'w-0 md:w-16'
       } overflow-hidden`}
     >
      {isExpanded && (
