@@ -40,12 +40,14 @@ export default function ChatPage() {
       });
 
       const botReply = response.data.answer;
-      setMessages([...updatedMessages, { text: botReply, isUser: false }]);
+      const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
+      setMessages(newMessages);
       animateBotReply(botReply);
 
       const newChatEntry = {
         title: userInput.length > 25 ? userInput.slice(0, 25) + '...' : userInput,
-        date: new Date().toLocaleDateString()
+        date: new Date().toLocaleDateString(),
+        messages: newMessages,
       };
       setChatHistory((prev) => [...prev, newChatEntry]);
     } catch (error) {
@@ -55,13 +57,18 @@ export default function ChatPage() {
     setIsLoading(false);
   };
 
+  const loadChatFromHistory = (chat) => {
+    setMessages(chat.messages);
+    setDisplayedText(chat.messages[chat.messages.length - 1]?.text || '');
+  };
+
   const toggleSidebar = () => {
     setSidebarExpanded(prev => !prev);
   };
 
   return (
     <div className="flex h-screen">
-      <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} />
+      <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} loadChatFromHistory={loadChatFromHistory} />
 
       <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#141131] via-[#720b36] to-black transition-all duration-300 ${sidebarExpanded ? 'ml-16' : 'ml-0'}`}>
         <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} />
