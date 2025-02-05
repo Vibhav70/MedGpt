@@ -45,7 +45,7 @@ const loginUser = async (req, res) => {
 
 // ✅ Signup Function
 const signupUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body; // ✅ Change username → email
 
   // Validate input
   const errors = validationResult(req);
@@ -54,18 +54,24 @@ const signupUser = async (req, res) => {
   }
 
   try {
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email }); // ✅ Change username → email
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Generate Customer ID & Hash Password
+    // Generate a unique customer ID
     const customer_id = generateCustomerId();
+
+    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create New User
-    const newUser = await User.create({ email, password: hashedPassword, customer_id });
+    // Create the new user
+    const newUser = await User.create({
+      email, // ✅ Change username → email
+      password: hashedPassword,
+      customer_id,
+    });
 
     res.status(201).json({
       message: "User registered successfully",

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { FaChevronLeft, FaChevronRight  } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 
 export default function Header({ sidebarExpanded, toggleSidebar }) {
   return (
@@ -16,11 +17,11 @@ export default function Header({ sidebarExpanded, toggleSidebar }) {
 
       {/* User Profile */}
       <div className="flex items-center space-x-4 cursor-pointer">
-        <img
+        <Link to="/"><img
           src="/user.png"
           alt="User Profile"
           className="h-10 w-10 rounded-full"
-        />
+        /></Link>
       </div>
     </div>
   );
