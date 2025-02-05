@@ -13,8 +13,17 @@ connectDB();
 // Initialize Express app
 const app = express();
 
+// ✅ Fix CORS Configuration
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow frontend origin
+    credentials: true, // Allow cookies & authorization headers
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed HTTP methods
+    allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+  })
+);
+
 // Middleware
-app.use(cors());
 app.use(bodyParser.json());
 
 // Routes

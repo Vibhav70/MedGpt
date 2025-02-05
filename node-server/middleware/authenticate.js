@@ -1,23 +1,27 @@
 const jwt = require("jsonwebtoken");
 
-exports.authenticateUser = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+const authenticateUser = (req, res, next) => {
+  const token = req.header("Authorization");
 
+  // ✅ Ensure token exists
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized. Token is missing.",
-    });
+    return res.status(401).json({ message: "Unauthorized: No token provided" });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Add decoded user information to the request object
+    // ✅ Fix: Remove "Bearer " prefix before verifying the token
+    const tokenParts = token.split(" ");
+    if (tokenParts.length !== 2 || tokenParts[0] !== "Bearer") {
+      return res.status(401).json({ message: "Unauthorized: Invalid token format" });
+    }
+
+    const decoded = jwt.verify(tokenParts[1], process.env.JWT_SECRET);
+    req.user = { id: decoded.id, email: decoded.email, customer_id: decoded.customer_id };
+
     next();
   } catch (error) {
-    return res.status(403).json({
-      success: false,
-      message: "Invalid or expired token.",
-    });
+    return res.status(401).json({ message: "Unauthorized: Invalid token" });
   }
 };
+
+module.exports = authenticateUser;

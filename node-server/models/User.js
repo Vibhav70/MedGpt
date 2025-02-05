@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Hash passwords in production
+  email: { type: String, required: true, unique: true }, // Change from username to email
+  password: { type: String, required: true }, // Hashed passwords
   customer_id: { type: String, unique: true, required: true },
   credits: { type: Number, default: 5 }, // Default credits
 });
