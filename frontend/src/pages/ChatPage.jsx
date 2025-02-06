@@ -82,22 +82,27 @@ export default function ChatPage() {
     setIsLoading(true);
   
     try {
-      // 🔹 STEP 1: Get response from AI Model
-      const llmResponse = await axios.post("http://127.0.0.1/chat", { user_input: userInput });
-      const botReply = llmResponse.data.answer || "No response received.";
+      // 🔹 STEP 1: Get AI Response
+      const aiResponse = await axios.post("http://127.0.0.1/chat", { user_input: userInput });
+  
+      if (!aiResponse.data || !aiResponse.data.answer) {
+        throw new Error("Invalid response from AI model");
+      }
+  
+      const botReply = aiResponse.data.answer; // Actual response from AI
   
       // Append AI response to UI
       const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
       setMessages(newMessages);
   
-      // 🔹 STEP 2: Store chat history in MongoDB
+      // 🔹 STEP 2: Store chat in MongoDB
       const token = localStorage.getItem("token");
-      await axios.post(
+      const saveChatResponse = await axios.post(
         `${API_URL}/api/chats`,
         {
           customer_id: user.customer_id,
           query: userInput,
-          response: botReply,
+          response: botReply, // ✅ Store actual response, not placeholder
           date: new Date().toISOString(),
         },
         {
@@ -109,21 +114,19 @@ export default function ChatPage() {
         }
       );
   
-      // 🔹 STEP 3: Update chat history & credits
-      setChatHistory((prev) => {
-        const newEntry = {
-          title: userInput.length > 25 ? userInput.slice(0, 25) + "..." : userInput,
+      if (!saveChatResponse.data.success) {
+        throw new Error("Failed to save chat history");
+      }
+  
+      // 🔹 STEP 3: Update chat history with correct response
+      setChatHistory((prev) => [
+        {
+          title: userInput.length > 25 ? userInput.slice(0, 21) + "..." : userInput,
           date: new Date().toLocaleDateString(),
-          messages: newMessages,
-        };
-  
-        // Avoid duplicate history entries
-        const updatedHistory = prev.some(chat => chat.title === newEntry.title)
-          ? prev
-          : [newEntry, ...prev];
-  
-        return updatedHistory;
-      });
+          messages: newMessages, // Save updated conversation
+        },
+        ...prev,
+      ]);
   
       fetchCredits(); // Update credits after sending a message
     } catch (error) {
@@ -137,10 +140,12 @@ export default function ChatPage() {
 
   // Load chat when clicked from the history sidebar
   const loadChatFromHistory = (chat) => {
-    if (!chat || !chat.messages) return;
+    if (!chat.messages || chat.messages.length === 0) return;
+  
     setMessages(chat.messages);
     setDisplayedText(chat.messages[chat.messages.length - 1]?.text || "");
   };
+  
   
 
   const toggleSidebar = () => {
@@ -148,7 +153,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-fit min-h-screen">
       <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} loadChatFromHistory={loadChatFromHistory} />
 
       <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#141131] via-[#720b36] to-black transition-all duration-300 ${sidebarExpanded ? "ml-16" : "ml-0"}`}>

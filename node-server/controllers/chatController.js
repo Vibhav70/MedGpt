@@ -3,71 +3,49 @@ const Chat = require("../models/Chat");
 
 exports.saveChat = async (req, res) => {
   try {
-    const { customer_id, query, date } = req.body; // Removed `response` from body
+    const { customer_id, query, response, date } = req.body;
 
     // Validate required fields
-    if (!customer_id || !query || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "customer_id, query, and date are required",
-      });
+    if (!customer_id || !query || !response || !date) {
+      return res.status(400).json({ success: false, message: "All fields (customer_id, query, response, date) are required" });
     }
 
     // Find the user by customer_id
     const user = await User.findOne({ customer_id });
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     // Check if the user has enough credits
     if (user.credits <= 0) {
-      return res.status(403).json({
-        success: false,
-        message: "Not enough credits. Please purchase more credits to continue.",
-      });
+      return res.status(403).json({ success: false, message: "Not enough credits. Please purchase more credits." });
     }
 
-    // Generate chatbot response (Here, replace with actual AI response logic)
-    const botReply = `AI Reply to: ${query}`; // Mock AI response, replace this with AI API call
-
-    // Deduct one credit **after** generating a response
+    // Deduct one credit from the user
     user.credits -= 1;
     await user.save();
 
-    // Save chat entry with actual response
+    // Save the chat with the actual response (not a placeholder)
     const newChat = new Chat({
       customer_id,
       query,
-      response: botReply, // Store actual response
+      response, // Store the actual response received from AI
       date,
     });
 
     const savedChat = await newChat.save();
 
-    // Return final chatbot response to frontend
     return res.status(201).json({
       success: true,
       message: "Chat saved successfully",
-      data: {
-        id: savedChat._id,
-        customer_id,
-        query,
-        response: botReply, // Sending response directly
-        date,
-      },
+      data: savedChat, // Return the saved chat object
     });
   } catch (error) {
     console.error("Error saving chat:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
+
 
 
 // Get All Chats
