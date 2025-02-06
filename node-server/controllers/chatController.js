@@ -108,6 +108,7 @@ exports.getChatById = async (req, res) => {
 
     res.status(200).json({ success: true, data: chat });
   } catch (error) {
+    console.error("Error fetching chat by ID:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -37,8 +37,6 @@ export default function ChatPage() {
     if (!user) return;
   
     const fetchChatHistory = async () => {
-      if (!user) return; // Ensure user is logged in
-  
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
@@ -50,16 +48,20 @@ export default function ChatPage() {
         );
   
         if (Array.isArray(response.data.data)) {
-          // Ensure chat titles are assigned correctly
+          // Format chat history correctly
           const formattedChats = response.data.data.map((chat) => ({
+            _id: chat._id, // Store the unique chat ID
             title: chat.query.length > 25 ? chat.query.slice(0, 25) + "..." : chat.query,
             date: new Date(chat.date).toLocaleDateString(),
-            messages: [{ text: chat.query, isUser: true }, { text: chat.response, isUser: false }],
+            messages: [
+              { text: chat.query, isUser: true },
+              { text: chat.response, isUser: false },
+            ],
           }));
   
           setChatHistory(formattedChats);
         } else {
-          setChatHistory([]); // Ensure empty array if data is not in expected format
+          setChatHistory([]);
         }
       } catch (error) {
         console.error("Error fetching chat history:", error);
@@ -69,7 +71,7 @@ export default function ChatPage() {
   
     fetchChatHistory();
     fetchCredits();
-  }, [user]);
+  }, [user]);  
   
 
   // Handle sending message
@@ -121,7 +123,7 @@ export default function ChatPage() {
       // 🔹 STEP 3: Update chat history with correct response
       setChatHistory((prev) => [
         {
-          title: userInput.length > 25 ? userInput.slice(0, 21) + "..." : userInput,
+          title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
           date: new Date().toLocaleDateString(),
           messages: newMessages, // Save updated conversation
         },
@@ -139,13 +141,32 @@ export default function ChatPage() {
   
 
   // Load chat when clicked from the history sidebar
-  const loadChatFromHistory = (chat) => {
-    if (!chat.messages || chat.messages.length === 0) return;
+  const loadChatFromHistory = async (chat) => {
+    if (!chat || !chat._id) return; // Ensure chat exists
   
-    setMessages(chat.messages);
-    setDisplayedText(chat.messages[chat.messages.length - 1]?.text || "");
-  };
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${API_URL}/api/chats/${chat._id}`, // Fetch chat by ID
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
   
+      if (response.data.success) {
+        const fetchedChat = response.data.data;
+        setMessages([
+          { text: fetchedChat.query, isUser: true },
+          { text: fetchedChat.response, isUser: false },
+        ]);
+      } else {
+        console.error("Failed to fetch chat details");
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error.response?.data || error.message);
+    }
+  };  
   
 
   const toggleSidebar = () => {

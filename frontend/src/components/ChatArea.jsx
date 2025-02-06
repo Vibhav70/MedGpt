@@ -6,35 +6,10 @@ import Loader from '../components/Loader';
 import { FaCopy, FaVolumeUp, FaPause } from "react-icons/fa"; // Import icons
 import logo from "/bot1.png";
 
-export default function ChatArea({ messages, isLoading, activeChat }) {
-  const [displayedText, setDisplayedText] = useState('');
+export default function ChatArea({ messages, isLoading }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const bottomRef = useRef(null);
   const chatRefs = useRef({}); // Store refs for each message
-
-  const animateBotReply = (text) => {
-    if (!text) return;
-    let displayed = '';
-    const words = text.split(' ');
-    let index = 0;
-
-    const interval = setInterval(() => {
-      if (index < words.length) {
-        displayed += (index > 0 ? ' ' : '') + words[index];
-        setDisplayedText(displayed);
-        index++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 50); // Adjust typing speed for smooth animation
-  };
-
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && !lastMessage.isUser) {
-      animateBotReply(lastMessage.text);
-    }
-  }, [messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,10 +17,10 @@ export default function ChatArea({ messages, isLoading, activeChat }) {
 
   // Scroll to the active chat when it's loaded
   useEffect(() => {
-    if (activeChat && chatRefs.current[activeChat]) {
-      chatRefs.current[activeChat].scrollIntoView({ behavior: "smooth", block: "center" });
+    if (messages.length > 0) {
+      chatRefs.current[messages.length - 1]?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [activeChat]);
+  }, [messages]);
 
   // Copy the bot's response text to clipboard
   const copyToClipboard = (text) => {
@@ -93,10 +68,7 @@ export default function ChatArea({ messages, isLoading, activeChat }) {
                 : 'text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap'
               }`}
             >
-              {msg.isUser 
-                ? msg.text 
-                : <ReactMarkdown>{index === messages.length - 1 ? displayedText : msg.text}</ReactMarkdown>
-              }
+              <ReactMarkdown>{msg.text}</ReactMarkdown>
             </motion.div>
 
             {/* Copy and Listen Buttons */}
@@ -104,14 +76,14 @@ export default function ChatArea({ messages, isLoading, activeChat }) {
               <div className="flex gap-3 ml-3">
                 <button
                   className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#ff8b37] text-sm transition-all"
-                  onClick={() => copyToClipboard(index === messages.length - 1 ? displayedText : msg.text)}
+                  onClick={() => copyToClipboard(msg.text)}
                 >
                   <FaCopy size={18} /> <span className="hidden md:inline">Copy</span>
                 </button>
 
                 <button
                   className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#43efff] text-sm transition-all"
-                  onClick={() => toggleSpeech(index === messages.length - 1 ? displayedText : msg.text)}
+                  onClick={() => toggleSpeech(msg.text)}
                 >
                   {isSpeaking ? <FaPause size={18} /> : <FaVolumeUp size={18} />}
                   <span className="hidden md:inline">{isSpeaking ? "Pause" : "Listen"}</span>
@@ -143,5 +115,4 @@ ChatArea.propTypes = {
     })
   ).isRequired,
   isLoading: PropTypes.bool.isRequired,
-  activeChat: PropTypes.number,
 };
