@@ -8,7 +8,7 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
       {isExpanded && (
         <div className="px-4 pt-24">
           <h2 className="text-2xl font-bold">Chat History</h2>
-          <ul className="mt-4 space-y-4">
+          <ul className="mt-4 space-y-4 h-[65vh] overflow-y-scroll">
             {chatHistory.length === 0 ? (
               <li className="text-gray-500">No chat history found.</li>
             ) : (
