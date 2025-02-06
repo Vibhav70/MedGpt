@@ -5,6 +5,7 @@ import SignupPage from "./pages/SignupPage";
 import ChatPage from "./pages/ChatPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import "./App.css"
 
 const App = () => (
   <AuthProvider>

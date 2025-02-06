@@ -71,17 +71,29 @@ export default function ChatPage() {
   
     const updatedMessages = [...messages, { text: userInput, isUser: true }];
     setMessages(updatedMessages);
-    setDisplayedText(""); // Reset displayed text before new message
+    setDisplayedText("");
     setIsLoading(true);
   
     try {
+      // 🔹 STEP 1: Get response from LLM API
+      const llmResponse = await axios.post("http://127.0.0.1/chat", {
+        user_input: userInput,
+      });
+  
+      const botReply = llmResponse.data.answer || "No response received.";
+  
+      // Append AI response to UI
+      const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
+      setMessages(newMessages);
+  
+      // 🔹 STEP 2: Store chat history in MongoDB
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      await axios.post(
         `${API_URL}/api/chats`,
         {
           customer_id: user.customer_id,
           query: userInput,
-          response: "",
+          response: botReply, // Store AI response
           date: new Date().toISOString(),
         },
         {
@@ -93,32 +105,26 @@ export default function ChatPage() {
         }
       );
   
-      // Ensure response is valid
-      const botReply = response.data.response || "No response received.";
-      const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
+      // 🔹 STEP 3: Update chat history & credits
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          title: userInput.length > 25 ? userInput.slice(0, 25) + "..." : userInput,
+          date: new Date().toLocaleDateString(),
+          messages: newMessages, // Save updated conversation
+        },
+      ]);
   
-      // Filter out any undefined or incorrect messages
-      const cleanedMessages = newMessages.filter(msg => msg && msg.text !== undefined);
-  
-      setMessages(cleanedMessages);
-  
-      // Update chat history with valid messages only
-      const newChatEntry = {
-        title: userInput.length > 25 ? userInput.slice(0, 25) + "..." : userInput,
-        date: new Date().toLocaleDateString(),
-        messages: cleanedMessages, // Ensuring no undefined messages
-      };
-      setChatHistory((prev) => [...prev, newChatEntry]);
-  
-      // Fetch updated credits after sending a message
-      fetchCredits();
+      fetchCredits(); // Fetch updated credits after every request
     } catch (error) {
       console.error("Error fetching chatbot response:", error.response?.data || error.message);
       setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
     }
   
     setIsLoading(false);
-  };  
+  };
+  
+   
   
 
   // Load chat when clicked from the history sidebar

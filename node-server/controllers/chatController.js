@@ -1,18 +1,18 @@
-const Chat = require("../models/Chat");
 const User = require("../models/User");
+const Chat = require("../models/Chat");
 
 exports.saveChat = async (req, res) => {
   try {
-    const { customer_id, query, response, date } = req.body;
+    const { customer_id, query, date } = req.body; // Removed `response` from body
 
     // Validate required fields
-    if (!customer_id || !query || !date) { // Remove strict requirement for `response`
-      return res.status(400).json({ success: false, message: "customer_id, query, and date are required" });
+    if (!customer_id || !query || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "customer_id, query, and date are required",
+      });
     }
-    
-    // If response is empty, store as "Processing..."
-    const storedResponse = response || "Processing...";
-    
+
     // Find the user by customer_id
     const user = await User.findOne({ customer_id });
     if (!user) {
@@ -30,22 +30,36 @@ exports.saveChat = async (req, res) => {
       });
     }
 
-    // Deduct one credit from the user
+    // Generate chatbot response (Here, replace with actual AI response logic)
+    const botReply = `AI Reply to: ${query}`; // Mock AI response, replace this with AI API call
+
+    // Deduct one credit **after** generating a response
     user.credits -= 1;
     await user.save();
 
-    // Create and save the chat entry
-    const newChat = new Chat({ customer_id, query, response: storedResponse, date });
+    // Save chat entry with actual response
+    const newChat = new Chat({
+      customer_id,
+      query,
+      response: botReply, // Store actual response
+      date,
+    });
+
     const savedChat = await newChat.save();
 
-    // Respond with success
+    // Return final chatbot response to frontend
     return res.status(201).json({
       success: true,
       message: "Chat saved successfully",
-      data: savedChat,
+      data: {
+        id: savedChat._id,
+        customer_id,
+        query,
+        response: botReply, // Sending response directly
+        date,
+      },
     });
   } catch (error) {
-    // Catch any unexpected errors and respond
     console.error("Error saving chat:", error.message);
     return res.status(500).json({
       success: false,
@@ -54,6 +68,7 @@ exports.saveChat = async (req, res) => {
     });
   }
 };
+
 
 // Get All Chats
 exports.getAllChats = async (req, res) => {
