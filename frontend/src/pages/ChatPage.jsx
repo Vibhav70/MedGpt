@@ -35,35 +35,42 @@ export default function ChatPage() {
   // Fetch all user chats when ChatPage loads
   useEffect(() => {
     if (!user) return;
-
+  
     const fetchChatHistory = async () => {
       if (!user) return; // Ensure user is logged in
   
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/chats/customer/${user.customer_id}`,
+          `${API_URL}/api/chats/customer/${user.customer_id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           }
         );
   
-        // Ensure chat history is an array
         if (Array.isArray(response.data.data)) {
-          setChatHistory(response.data.data);
+          // Ensure chat titles are assigned correctly
+          const formattedChats = response.data.data.map((chat) => ({
+            title: chat.query.length > 25 ? chat.query.slice(0, 25) + "..." : chat.query,
+            date: new Date(chat.date).toLocaleDateString(),
+            messages: [{ text: chat.query, isUser: true }, { text: chat.response, isUser: false }],
+          }));
+  
+          setChatHistory(formattedChats);
         } else {
-          setChatHistory([]); // Set empty array if response is not in expected format
+          setChatHistory([]); // Ensure empty array if data is not in expected format
         }
       } catch (error) {
         console.error("Error fetching chat history:", error);
-        setChatHistory([]); // Ensure it is still an array if an error occurs
+        setChatHistory([]);
       }
     };
-
+  
     fetchChatHistory();
     fetchCredits();
   }, [user]);
+  
 
   // Handle sending message
   const sendMessage = async (userInput) => {
@@ -75,11 +82,8 @@ export default function ChatPage() {
     setIsLoading(true);
   
     try {
-      // 🔹 STEP 1: Get response from LLM API
-      const llmResponse = await axios.post("http://127.0.0.1/chat", {
-        user_input: userInput,
-      });
-  
+      // 🔹 STEP 1: Get response from AI Model
+      const llmResponse = await axios.post("http://127.0.0.1/chat", { user_input: userInput });
       const botReply = llmResponse.data.answer || "No response received.";
   
       // Append AI response to UI
@@ -93,7 +97,7 @@ export default function ChatPage() {
         {
           customer_id: user.customer_id,
           query: userInput,
-          response: botReply, // Store AI response
+          response: botReply,
           date: new Date().toISOString(),
         },
         {
@@ -106,32 +110,38 @@ export default function ChatPage() {
       );
   
       // 🔹 STEP 3: Update chat history & credits
-      setChatHistory((prev) => [
-        ...prev,
-        {
+      setChatHistory((prev) => {
+        const newEntry = {
           title: userInput.length > 25 ? userInput.slice(0, 25) + "..." : userInput,
           date: new Date().toLocaleDateString(),
-          messages: newMessages, // Save updated conversation
-        },
-      ]);
+          messages: newMessages,
+        };
   
-      fetchCredits(); // Fetch updated credits after every request
+        // Avoid duplicate history entries
+        const updatedHistory = prev.some(chat => chat.title === newEntry.title)
+          ? prev
+          : [newEntry, ...prev];
+  
+        return updatedHistory;
+      });
+  
+      fetchCredits(); // Update credits after sending a message
     } catch (error) {
       console.error("Error fetching chatbot response:", error.response?.data || error.message);
       setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
     }
   
     setIsLoading(false);
-  };
-  
-   
+  };  
   
 
   // Load chat when clicked from the history sidebar
   const loadChatFromHistory = (chat) => {
+    if (!chat || !chat.messages) return;
     setMessages(chat.messages);
     setDisplayedText(chat.messages[chat.messages.length - 1]?.text || "");
   };
+  
 
   const toggleSidebar = () => {
     setSidebarExpanded((prev) => !prev);

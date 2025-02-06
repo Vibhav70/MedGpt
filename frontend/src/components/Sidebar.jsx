@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 
 export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHistory }) {
-  // Ensure chatHistory is an array before mapping
   const safeChatHistory = Array.isArray(chatHistory) ? chatHistory : [];
 
   return (
@@ -23,7 +22,7 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
                   className="cursor-pointer p-2 hover:border-black hover:border rounded-md transition-all duration-200"
                   onClick={() => loadChatFromHistory(chat)}
                 >
-                  <div className="font-bold">{chat.title || "Untitled Chat"}</div>
+                  <div className="font-bold">{chat.title || "New Chat"}</div>
                   <div className="text-sm text-gray-500">{chat.date || "Unknown Date"}</div>
                 </li>
               ))
@@ -34,6 +33,7 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
     </div>
   );
 }
+
 
 Sidebar.propTypes = {
   isExpanded: PropTypes.bool.isRequired,
