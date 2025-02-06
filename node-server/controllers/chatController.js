@@ -1,5 +1,5 @@
-const Chat = require("../models/Chat");
 const User = require("../models/User");
+const Chat = require("../models/Chat");
 
 exports.saveChat = async (req, res) => {
   try {
@@ -7,53 +7,46 @@ exports.saveChat = async (req, res) => {
 
     // Validate required fields
     if (!customer_id || !query || !response || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields (customer_id, query, response, date) are required",
-      });
+      return res.status(400).json({ success: false, message: "All fields (customer_id, query, response, date) are required" });
     }
 
     // Find the user by customer_id
     const user = await User.findOne({ customer_id });
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     // Check if the user has enough credits
     if (user.credits <= 0) {
-      return res.status(403).json({
-        success: false,
-        message: "Not enough credits. Please purchase more credits to continue.",
-      });
+      return res.status(403).json({ success: false, message: "Not enough credits. Please purchase more credits." });
     }
 
     // Deduct one credit from the user
     user.credits -= 1;
     await user.save();
 
-    // Create and save the chat entry
-    const newChat = new Chat({ customer_id, query, response, date });
+    // Save the chat with the actual response (not a placeholder)
+    const newChat = new Chat({
+      customer_id,
+      query,
+      response, // Store the actual response received from AI
+      date,
+    });
+
     const savedChat = await newChat.save();
 
-    // Respond with success
     return res.status(201).json({
       success: true,
       message: "Chat saved successfully",
-      data: savedChat,
+      data: savedChat, // Return the saved chat object
     });
   } catch (error) {
-    // Catch any unexpected errors and respond
     console.error("Error saving chat:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
+
+
 
 // Get All Chats
 exports.getAllChats = async (req, res) => {

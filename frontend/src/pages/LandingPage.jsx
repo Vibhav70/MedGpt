@@ -2,14 +2,14 @@ import HeaderMain from "../components/HeaderMain";
 
 const LandingPage = () => {
   return (
-    <div className="bg-gradient-to-br from-[#141131] via-[#720b36] to-black min-h-screen flex flex-col items-center text-white pt-6 pb-12">
+    <div className="bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] min-h-screen flex flex-col items-center text-black pt-6 pb-12">
       <HeaderMain />
       <section className="text-center py-20 px-6 max-w-4xl">
         <h1 className="text-4xl md:text-6xl font-extrabold drop-shadow-lg animate-fade-in">MedBookGPT</h1>
         <p className="text-xl md:text-2xl mt-6 opacity-95 max-w-2xl mx-auto leading-relaxed">
           Your AI-Powered Medical Study Companion. Get direct references and answers to all your textbook questions instantly.
         </p>
-        <button className="mt-8 bg-white text-blue-700 px-10 py-4 rounded-full text-xl font-semibold shadow-lg hover:bg-gray-200 transition-all duration-300 transform hover:scale-105">
+        <button className="mt-8 bg-[#13c2dd] text-white px-10 py-4 rounded-full text-xl font-semibold shadow-lg hover:bg-[#16a0a0] transition-all duration-300 transform hover:scale-105">
           Get Started
         </button>
       </section>

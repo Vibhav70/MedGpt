@@ -4,9 +4,9 @@ const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const generateCustomerId = require("../utils/generateId");
 
-// Login function
+// ✅ Login Function (Using Email Instead of Username)
 const loginUser = async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   // Validate input
   const errors = validationResult(req);
@@ -15,43 +15,37 @@ const loginUser = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Compare the hashed password
+    // Compare hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Generate a JWT token
+    // Generate JWT Token
     const token = jwt.sign(
-      { id: user._id, username: user.username, customer_id: user.customer_id },
-      process.env.JWT_SECRET, // Make sure you set JWT_SECRET in your .env file
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { id: user._id, email: user.email, customer_id: user.customer_id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
     );
 
-    // Respond with the token and user details
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: {
-        token,
-        customer_id: user.customer_id,
-        username: user.username,
-        credits: user.credits,
-      },
+      data: { token, customer_id: user.customer_id, email: user.email, credits: user.credits },
     });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
 };
 
-// Signup function
+// ✅ Signup Function
 const signupUser = async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body; // ✅ Change username → email
 
   // Validate input
   const errors = validationResult(req);
@@ -60,10 +54,10 @@ const signupUser = async (req, res) => {
   }
 
   try {
-    // Check if the user already exists
-    const existingUser = await User.findOne({ username });
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email }); // ✅ Change username → email
     if (existingUser) {
-      return res.status(400).json({ message: "Username already exists" });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
     // Generate a unique customer ID
@@ -74,7 +68,7 @@ const signupUser = async (req, res) => {
 
     // Create the new user
     const newUser = await User.create({
-      username,
+      email, // ✅ Change username → email
       password: hashedPassword,
       customer_id,
     });
@@ -88,23 +82,19 @@ const signupUser = async (req, res) => {
   }
 };
 
+// ✅ Logout Function
 const logoutUser = (req, res) => {
   try {
-    // Since JWTs are stateless, we simply inform the client to discard the token.
     res.status(200).json({
       success: true,
       message: "User logged out successfully. Please discard your token.",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// Get Credits
+// ✅ Get Credits Function
 const getCredits = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -120,13 +110,9 @@ const getCredits = async (req, res) => {
       data: { credits: user.credits },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-
+// ✅ Ensure `getCredits` is Exported
 module.exports = { loginUser, signupUser, logoutUser, getCredits };
