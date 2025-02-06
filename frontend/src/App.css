@@ -19,6 +19,20 @@
   background: transparent;
 }
 
+.no-scrollbar{
+  ::-webkit-scrollbar{
+    width: 0px;
+  }
+  
+  ::-webkit-scrollbar-track{
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb{
+    background: transparent;
+  }
+}
+
 .decor{
   background: linear-gradient(45deg , #688AE9,#f06f82);
   -webkit-text-fill-color: transparent;

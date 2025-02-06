@@ -70,7 +70,7 @@ export default function ChatArea({ messages, isLoading, activeChat }) {
   };
 
   return (
-    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll p-2 mt-16 md:p-4">
+    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-2 mt-16 md:p-4">
       {messages.map((msg, index) => (
         <div
           key={index}
@@ -143,5 +143,5 @@ ChatArea.propTypes = {
     })
   ).isRequired,
   isLoading: PropTypes.bool.isRequired,
-  activeChat: PropTypes.number, // New prop for identifying the active chat index
+  activeChat: PropTypes.number,
 };

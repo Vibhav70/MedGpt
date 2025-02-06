@@ -6,13 +6,13 @@ exports.saveChat = async (req, res) => {
     const { customer_id, query, response, date } = req.body;
 
     // Validate required fields
-    if (!customer_id || !query || !response || !date) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields (customer_id, query, response, date) are required",
-      });
+    if (!customer_id || !query || !date) { // Remove strict requirement for `response`
+      return res.status(400).json({ success: false, message: "customer_id, query, and date are required" });
     }
-
+    
+    // If response is empty, store as "Processing..."
+    const storedResponse = response || "Processing...";
+    
     // Find the user by customer_id
     const user = await User.findOne({ customer_id });
     if (!user) {
@@ -35,7 +35,7 @@ exports.saveChat = async (req, res) => {
     await user.save();
 
     // Create and save the chat entry
-    const newChat = new Chat({ customer_id, query, response, date });
+    const newChat = new Chat({ customer_id, query, response: storedResponse, date });
     const savedChat = await newChat.save();
 
     // Respond with success
