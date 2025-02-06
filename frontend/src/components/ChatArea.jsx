@@ -64,7 +64,7 @@ export default function ChatArea({ messages, isLoading }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className={`p-3 rounded-2xl text-md leading-7 shadow-md ${
-                msg.isUser ? 'text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-12' 
+                msg.isUser ? 'text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-[22%] md:ml-[12%]' 
                 : 'text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap'
               }`}
             >
