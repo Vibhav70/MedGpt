@@ -22,7 +22,11 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # Define serverless specifications and index name
 spec = ServerlessSpec(cloud="aws", region="us-east-1")
+<<<<<<< HEAD
 index_name = "testing"
+=======
+index_name = "testing"  #old finaltest
+>>>>>>> bc5d554eb6c745409200f38f96d5681ee45f80b9
 
 # Connect to Pinecone index
 index = pc.Index(index_name)
@@ -95,7 +99,7 @@ def make_rag_prompt(user_input, context, is_question):
 
 # Generate a response from Google Gemini and append metadata to the final response
 def generate_answer(system_message, chat_history, prompt, relevant_text):
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # Combine system message and chat history
     full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
