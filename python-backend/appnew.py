@@ -22,7 +22,7 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # Define serverless specifications and index name
 spec = ServerlessSpec(cloud="aws", region="us-east-1")
-index_name = "finaltest"
+index_name = "testing"
 
 # Connect to Pinecone index
 index = pc.Index(index_name)

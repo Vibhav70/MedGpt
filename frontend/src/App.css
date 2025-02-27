@@ -23,3 +23,8 @@
     -webkit-background-clip: text;
     background-clip: inherit;
 }
+
+.fading-box {
+  -webkit-mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+}

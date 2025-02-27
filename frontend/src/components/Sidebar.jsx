@@ -7,7 +7,7 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
     } overflow-hidden`}>
       {isExpanded && (
         <div className="px-4 pt-24">
-          <h2 className="text-2xl font-bold">Chat History</h2>
+          <h2 className="text-2xl font-bold text-[#6d1da7]">Chat History</h2>
           <ul className="mt-4 space-y-4 h-[65vh] overflow-y-scroll">
             {chatHistory.length === 0 ? (
               <li className="text-gray-500">No chat history found.</li>
@@ -15,11 +15,11 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
               chatHistory.map((chat) => (
                 <li 
                   key={chat._id} // Ensure unique key for React
-                  className="cursor-pointer p-2 hover:border-black hover:border rounded-md transition-all duration-200"
+                  className="cursor-pointer overflow-x-hidden text-nowrap py-1 px-2 hover:bg-[#eee1ff] rounded-md transition-all duration-200"
                   onClick={() => loadChatFromHistory(chat)} // Pass chat object with ID
                 >
                   <div className="font-bold">{chat.title || "Untitled Chat"}</div>
-                  <div className="text-sm text-gray-500">{chat.date || "Unknown Date"}</div>
+                  <div className="text-[12px] text-gray-500 text-right">{chat.date || "Unknown Date"}</div>
                 </li>
               ))
             )}
