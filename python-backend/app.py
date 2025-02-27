@@ -22,11 +22,7 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # Define serverless specifications and index name
 spec = ServerlessSpec(cloud="aws", region="us-east-1")
-<<<<<<< HEAD
 index_name = "testing"
-=======
-index_name = "testing"  #old finaltest
->>>>>>> bc5d554eb6c745409200f38f96d5681ee45f80b9
 
 # Connect to Pinecone index
 index = pc.Index(index_name)
@@ -49,7 +45,7 @@ tokenizer = tiktoken.get_encoding("cl100k_base")  # Use the appropriate tokenize
 
 # System message for the chatbot
 system_message = (
-    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context ONLY"
+    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context "
     "from medical books and resources. If the information is not in the provided context, respond with: "
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
@@ -86,7 +82,7 @@ def get_relevant_passage(query, vectorstore, max_results=3):
 # Function to create the RAG prompt for topics or questions
 def make_rag_prompt(user_input, context, is_question):
     if is_question:
-        instruction = "Answer the user's question in detail using all the information from the provided context ONLY. If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.'"
+        instruction = "Answer the user's question in detail using all the information from the provided context.If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.Provide a thorough explanation, include examples if applicable, and add any relevant extra information that might help the user understand the topic better.At the end of your response, suggest 1-2 follow-up questions or topics the user might want to explore.Do not provide sources or context in the answer"
     else:
         instruction = "Provide all relevant information about the given topic using the provided context ONLY. Be detailed and comprehensive."
     
@@ -117,8 +113,7 @@ def generate_answer(system_message, chat_history, prompt, relevant_text):
     print(f"Input Tokens: {input_tokens}, Output Tokens: {output_tokens}, Total Tokens: {input_tokens + output_tokens}")
     
     # Append metadata for transparency
-    response_with_metadata = f"{response}\n\n### Source(s):\n{relevant_text}"
-    return response_with_metadata
+    return response
 
 # Function to detect if the input is a question
 def is_question(input_text):
