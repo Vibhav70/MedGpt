@@ -127,7 +127,7 @@ const sendMessage = async (userInput) => {
 
     // ✅ Update chat history
     setChatHistory((prev) => [
-      { title: userInput.length > 21 ? userInput.slice(0, 21) : userInput, date: new Date().toLocaleDateString(), messages: newMessages },
+      { title: userInput.length > 21 ? userInput : userInput, date: new Date().toLocaleDateString(), messages: newMessages },
       ...prev,
     ]);
 

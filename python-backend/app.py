@@ -45,7 +45,7 @@ tokenizer = tiktoken.get_encoding("cl100k_base")  # Use the appropriate tokenize
 
 # System message for the chatbot
 system_message = (
-    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context "
+    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context ONLY"
     "from medical books and resources. If the information is not in the provided context, respond with: "
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
@@ -82,9 +82,9 @@ def get_relevant_passage(query, vectorstore, max_results=3):
 # Function to create the RAG prompt for topics or questions
 def make_rag_prompt(user_input, context, is_question):
     if is_question:
-        instruction = "Answer the user's question in detail using all the information from the provided context. If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.'"
+        instruction = "Answer the user's question in detail using all the information from the provided context ONLY. If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.'"
     else:
-        instruction = "Provide all relevant information about the given topic using the provided context. Be detailed and comprehensive."
+        instruction = "Provide all relevant information about the given topic using the provided context ONLY. Be detailed and comprehensive."
     
     return (
         f"{instruction}\n\n"
