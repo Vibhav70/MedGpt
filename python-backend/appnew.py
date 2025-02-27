@@ -98,7 +98,7 @@ def make_rag_prompt(user_input, context, is_question):
     )
 
 def generate_answer(system_message, chat_history, prompt):
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     # Combine system message and chat history
     full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"

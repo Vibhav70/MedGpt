@@ -3,53 +3,46 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useEffect, useState, useRef } from 'react';
 import Loader from '../components/Loader';
-import { FaCopy, FaVolumeUp, FaPause } from "react-icons/fa"; // Import icons
+import { FaCopy, FaVolumeUp, FaPause } from "react-icons/fa"; 
 import logo from "/bot1.png";
 
-export default function ChatArea({ messages, isLoading }) {
+export default function ChatArea({ messages, isLoading, newBotResponse }) {
+  const [displayedText, setDisplayedText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const bottomRef = useRef(null);
-  const chatRefs = useRef({}); // Store refs for each message
+  const chatRefs = useRef({}); 
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Scroll to the active chat when it's loaded
+  // 🔹 Animate only if the newBotResponse exists (i.e., a fresh response from AI)
   useEffect(() => {
-    if (messages.length > 0) {
-      chatRefs.current[messages.length - 1]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [messages]);
+    if (!newBotResponse) return;
 
-  // Copy the bot's response text to clipboard
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    alert("Copied to clipboard!");
-  };
+    let displayed = '';
+    const words = newBotResponse.split(' ');
+    let index = 0;
 
-  // Toggle speech synthesis (Play/Pause)
-  const toggleSpeech = (text) => {
-    if (isSpeaking) {
-      speechSynthesis.cancel();
-      setIsSpeaking(false);
-    } else {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      utterance.onend = () => setIsSpeaking(false);
-      speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
-    }
-  };
+    const interval = setInterval(() => {
+      if (index < words.length) {
+        displayed += (index > 0 ? ' ' : '') + words[index];
+        setDisplayedText(displayed);
+        index++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 50); 
+
+    return () => clearInterval(interval);
+  }, [newBotResponse]);
 
   return (
     <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-2 mt-16 md:p-4">
       {messages.map((msg, index) => (
         <div
           key={index}
-          ref={(el) => (chatRefs.current[index] = el)} // Store reference for each message
+          ref={(el) => (chatRefs.current[index] = el)}
           className={`flex md:mb-4 ${msg.isUser ? 'justify-end' : ''}`}
         >
           {!msg.isUser && (
@@ -64,11 +57,16 @@ export default function ChatArea({ messages, isLoading }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className={`p-3 rounded-2xl text-md leading-7 shadow-md ${
-                msg.isUser ? 'text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-[22%] md:ml-[12%]' 
+                msg.isUser ? 'text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-12' 
                 : 'text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap'
               }`}
             >
-              <ReactMarkdown>{msg.text}</ReactMarkdown>
+              <ReactMarkdown>
+                {msg.isUser 
+                  ? msg.text 
+                  : (msg.text === newBotResponse ? displayedText : msg.text) // 🔹 Animate only if it’s the latest bot response
+                }
+              </ReactMarkdown>
             </motion.div>
 
             {/* Copy and Listen Buttons */}
@@ -76,14 +74,27 @@ export default function ChatArea({ messages, isLoading }) {
               <div className="flex gap-3 ml-3">
                 <button
                   className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#ff8b37] text-sm transition-all"
-                  onClick={() => copyToClipboard(msg.text)}
+                  onClick={() => navigator.clipboard.writeText(msg.text)}
                 >
                   <FaCopy size={18} /> <span className="hidden md:inline">Copy</span>
                 </button>
 
                 <button
                   className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#43efff] text-sm transition-all"
-                  onClick={() => toggleSpeech(msg.text)}
+                  onClick={() => {
+                    if (isSpeaking) {
+                      speechSynthesis.cancel();
+                      setIsSpeaking(false);
+                    } else {
+                      const utterance = new SpeechSynthesisUtterance(msg.text);
+                      utterance.rate = 1;
+                      utterance.pitch = 1;
+                      utterance.volume = 1;
+                      utterance.onend = () => setIsSpeaking(false);
+                      speechSynthesis.speak(utterance);
+                      setIsSpeaking(true);
+                    }
+                  }}
                 >
                   {isSpeaking ? <FaPause size={18} /> : <FaVolumeUp size={18} />}
                   <span className="hidden md:inline">{isSpeaking ? "Pause" : "Listen"}</span>
@@ -94,7 +105,7 @@ export default function ChatArea({ messages, isLoading }) {
         </div>
       ))}
 
-      {/* Show Loader when the bot is generating a response */}
+      {/* Show Loader when bot is responding */}
       {isLoading && (
         <div className="flex items-center gap-2 mt-4">
           <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-1 md:mr-2 mt-2 rounded-full" />
@@ -115,4 +126,5 @@ ChatArea.propTypes = {
     })
   ).isRequired,
   isLoading: PropTypes.bool.isRequired,
+  newBotResponse: PropTypes.string, // New prop to handle AI responses
 };
