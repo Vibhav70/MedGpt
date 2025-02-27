@@ -85,7 +85,7 @@ const sendMessage = async (userInput) => {
   setIsLoading(true);
 
   try {
-    // 🔹 STEP 1: Check if user has enough credits
+    // ✅ Check if user has enough credits
     const token = localStorage.getItem("token");
     const creditsResponse = await axios.get(`${API_URL}/api/auth/credits`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -97,63 +97,49 @@ const sendMessage = async (userInput) => {
     if (remainingCredits <= 0) {
       setMessages([...updatedMessages, { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false }]);
       setIsLoading(false);
-      return; // Stop execution if credits are zero
+      return;
     }
 
-    // 🔹 STEP 2: Get AI Response
+    // ✅ Get AI Response
     const aiResponse = await axios.post("http://127.0.0.1/chat", { user_input: userInput });
 
     if (!aiResponse.data || !aiResponse.data.answer) {
       throw new Error("Invalid response from AI model");
     }
 
-    const botReply = aiResponse.data.answer; // Actual response from AI
+    const botReply = aiResponse.data.answer;
 
-    // Append AI response to UI
+    // ✅ Append AI response to UI
     const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
     setMessages(newMessages);
+    setNewBotResponse(botReply); // 🔹 Pass response to trigger animation
 
-    // 🔹 STEP 3: Store chat in MongoDB
-    const saveChatResponse = await axios.post(
-      `${API_URL}/api/chats`,
-      {
-        customer_id: user.customer_id,
-        query: userInput,
-        response: botReply, 
-        date: new Date().toISOString(),
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      }
-    );
+    // ✅ Store chat in MongoDB
+    await axios.post(`${API_URL}/api/chats`, {
+      customer_id: user.customer_id,
+      query: userInput,
+      response: botReply, 
+      date: new Date().toISOString(),
+    }, {
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      withCredentials: true,
+    });
 
-    if (!saveChatResponse.data.success) {
-      throw new Error("Failed to save chat history");
-    }
-
-    // 🔹 STEP 4: Update chat history with correct response
+    // ✅ Update chat history
     setChatHistory((prev) => [
-      {
-        title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
-        date: new Date().toLocaleDateString(),
-        messages: newMessages, 
-      },
+      { title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput, date: new Date().toLocaleDateString(), messages: newMessages },
       ...prev,
     ]);
 
-    fetchCredits(); // Update credits after sending a message
-    setNewBotResponse(botReply); // Pass latest AI response for animation
+    fetchCredits();
   } catch (error) {
     console.error("Error fetching chatbot response:", error.response?.data || error.message);
     setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
   }
 
   setIsLoading(false);
-};  
+};
+
   
 
   // Load chat when clicked from the history sidebar
