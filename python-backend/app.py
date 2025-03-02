@@ -1,17 +1,13 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 import os
-import time
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import google.generativeai as genai
-import tiktoken  # OpenAI tokenizer
-# from pymongo import MongoClient
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -20,13 +16,11 @@ load_dotenv()
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-# Define serverless specifications and index name
-spec = ServerlessSpec(cloud="aws", region="us-east-1")
-index_name = "testing"
+# Pinecone index name
+index_name = "testing2"
 
 # Connect to Pinecone index
 index = pc.Index(index_name)
-time.sleep(1)
 
 # Google API configuration
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -40,9 +34,6 @@ vectorstore = PineconeVectorStore(
     text_key="text"  # Ensure this matches your Pinecone schema
 )
 
-# OpenAI tokenizer initialization
-tokenizer = tiktoken.get_encoding("cl100k_base")  # Use the appropriate tokenizer for the embedding model
-
 # System message for the chatbot
 system_message = (
     "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context "
@@ -50,41 +41,42 @@ system_message = (
     "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
 )
 
-# MongoDB configuration
-# MONGO_URI = os.getenv("MONGO_URI")
-# MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
-# MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME")
-
-# # Connect to MongoDB
-# client = MongoClient(MONGO_URI)
-# db = client[MONGO_DB_NAME]
-# collection = db[MONGO_COLLECTION_NAME]
-
-# Function to calculate tokens
-def count_tokens(text):
-    return len(tokenizer.encode(text))
-
 # Function to retrieve relevant context with metadata
-def get_relevant_passage(query, vectorstore, max_results=3):
+def get_relevant_passage(query, vectorstore, max_results=4):
     results = vectorstore.similarity_search(query, k=max_results)
-    if results:
-        # Combine passages with essential metadata
-        context = "\n".join(
-            f"- Title: {result.metadata.get('book_title', 'Unknown Book')}, "
-            f"Author: {result.metadata.get('author', 'Unknown Author')}, "
-            f"Page: {result.metadata.get('page_number', 'Unknown')}:\n"
-            f"{result.page_content.strip()}"
-            for result in results if result.page_content
-        )
-        return context
-    return "No relevant context found."
+    print(f"Retrieved {len(results)} results from Pinecone.")  # Log number of results
+    
+    # Organize results by book and author
+    grouped_results = {}
+    for result in results:
+        book_title = result.metadata.get("book_title", "Unknown Book")
+        author = result.metadata.get("author", "Unknown Author")
+        key = (book_title, author)
+        
+        if key not in grouped_results:
+            grouped_results[key] = []
+        
+        grouped_results[key].append(result)
+        print(f"Added result from Book: {book_title}, Author: {author}")  # Log each result
+    
+    return grouped_results
 
 # Function to create the RAG prompt for topics or questions
 def make_rag_prompt(user_input, context, is_question):
     if is_question:
-        instruction = "Answer the user's question in detail using all the information from the provided context.If the context does not contain the answer, respond with: 'The provided context does not contain sufficient information.Provide a thorough explanation, include examples if applicable, and add any relevant extra information that might help the user understand the topic better.At the end of your response, suggest 1-2 follow-up questions or topics the user might want to explore.Do not provide sources or context in the answer"
+        instruction = (
+            "Answer the user's question in detail using ONLY the provided context. "
+            "If the context does not contain enough information, respond with: 'The provided context does not contain sufficient information.' "
+            "Do not make up information or use external knowledge. "
+            "Be concise and accurate."
+        )
     else:
-        instruction = "Provide all relevant information about the given topic using the provided context ONLY. Be detailed and comprehensive."
+        instruction = (
+            "Provide a detailed explanation of the topic using ONLY the provided context. "
+            "If the context does not contain enough information, respond with: 'The provided context does not contain sufficient information.' "
+            "Do not make up information or use external knowledge. "
+            "Be concise and accurate."
+        )
     
     return (
         f"{instruction}\n\n"
@@ -94,26 +86,39 @@ def make_rag_prompt(user_input, context, is_question):
     )
 
 # Generate a response from Google Gemini and append metadata to the final response
-def generate_answer(system_message, chat_history, prompt, relevant_text):
+def generate_answer(system_message, chat_history, prompt, grouped_results):
     model = genai.GenerativeModel("gemini-2.0-flash")
-
-    # Combine system message and chat history
-    full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\nUser: {prompt}\nAssistant:"
     
-    # Count input tokens
-    input_tokens = count_tokens(full_prompt)
+    responses = []
     
-    # Generate the response
-    response = model.generate_content(full_prompt).text
+    for (book_title, author), results in grouped_results.items():
+        # Combine passages for this book and author
+        context = "\n".join(
+            f"- Page: {result.metadata.get('page_number', 'Unknown')}:\n"
+            f"{result.page_content.strip()}"
+            for result in results if result.page_content
+        )
+        print(f"Context for Book: {book_title}, Author: {author}:\n{context}")  # Log context
+        
+        # Create a RAG prompt for this book and author
+        book_prompt = make_rag_prompt(prompt, context, is_question=True)
+        print(f"Prompt for Book: {book_title}, Author: {author}:\n{book_prompt}")  # Log prompt
+        
+        # Combine system message and chat history
+        full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\n{book_prompt}"
+        
+        # Generate the response
+        response = model.generate_content(full_prompt).text
+        print(f"Response for Book: {book_title}, Author: {author}:\n{response}")  # Log response
+        
+        # Append the response with book and author information
+        responses.append({
+            "book_title": book_title,
+            "author": author,
+            "response": response.strip()
+        })
     
-    # Count output tokens
-    output_tokens = count_tokens(response)
-    
-    # Print token usage
-    print(f"Input Tokens: {input_tokens}, Output Tokens: {output_tokens}, Total Tokens: {input_tokens + output_tokens}")
-    
-    # Append metadata for transparency
-    return response
+    return responses
 
 # Function to detect if the input is a question
 def is_question(input_text):
@@ -157,29 +162,23 @@ async def chat(chat_input: ChatInput, request: Request):
     input_is_question = is_question(user_input)
 
     # Retrieve relevant context and create a RAG prompt
-    relevant_text = get_relevant_passage(user_input, vectorstore)
-    prompt = make_rag_prompt(user_input, relevant_text, input_is_question)
+    grouped_results = get_relevant_passage(user_input, vectorstore)
+    print(f"Grouped Results: {grouped_results}")  # Log grouped results
+
+    prompt = make_rag_prompt(user_input, "", input_is_question)  # Context is now handled in generate_answer
+    print(f"Constructed Prompt: {prompt}")  # Log constructed prompt
 
     # Generate a response
-    answer = generate_answer(system_message, request.session["chat_history"], prompt, relevant_text)
+    answer = generate_answer(system_message, request.session["chat_history"], prompt, grouped_results)
+    print(f"Generated Answer: {answer}")  # Log generated answer
 
     # Update chat history
     request.session["chat_history"] = update_chat_history(
         request.session["chat_history"], user_input, answer
     )
 
-    # Save query and response to MongoDB
-    # chat_record = {
-    #     "query": user_input,
-    #     "response": answer.strip(),
-    #     "timestamp": time.time()
-    # }
-    # collection.insert_one(chat_record)
-
-    # Return the answer
-    return {"answer": answer.strip()} 
-    
-
+    # Return the answer in JSON format
+    return {"answers": answer}
 
 # To run the FastAPI app, use the following command:
 # uvicorn app:app --reload
