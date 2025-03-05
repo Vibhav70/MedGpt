@@ -101,7 +101,7 @@ const sendMessage = async (userInput) => {
     }
 
     // ✅ Get AI Response
-    const aiResponse = await axios.post("http://127.0.0.1/chat", { user_input: userInput });
+    const aiResponse = await axios.post("http://127.0.0.1:8000/chat", { user_input: userInput });
 
     if (!aiResponse.data || !aiResponse.data.answer) {
       throw new Error("Invalid response from AI model");
