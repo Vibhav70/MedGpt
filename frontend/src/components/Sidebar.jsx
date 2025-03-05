@@ -15,7 +15,7 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
               chatHistory.map((chat) => (
                 <li 
                   key={chat._id} // Ensure unique key for React
-                  className="cursor-pointer overflow-x-hidden text-nowrap py-1 px-2 hover:bg-[#eee1ff] rounded-md transition-all duration-200"
+                  className="cursor-pointer overflow-x-hidden text-nowrap py-1 px-2 hover:bg-[#eee1ff] rounded-md transition-all duration-200 fading-box"
                   onClick={() => loadChatFromHistory(chat)} // Pass chat object with ID
                 >
                   <div className="font-bold">{chat.title || "Untitled Chat"}</div>

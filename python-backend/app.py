@@ -16,8 +16,14 @@ load_dotenv()
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
+<<<<<<< HEAD
+# Define serverless specifications and index name
+spec = ServerlessSpec(cloud="aws", region="us-east-1")
+index_name = "testing"  #old finaltest
+=======
 # Pinecone index name
 index_name = "testing2"
+>>>>>>> 2b45df6dc11bce123f1bb63dd12cabde7856f364
 
 # Connect to Pinecone index
 index = pc.Index(index_name)
