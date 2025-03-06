@@ -85,7 +85,6 @@ const sendMessage = async (userInput) => {
   setIsLoading(true);
 
   try {
-    // ✅ Check if user has enough credits
     const token = localStorage.getItem("token");
     const creditsResponse = await axios.get(`${API_URL}/api/auth/credits`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -93,39 +92,47 @@ const sendMessage = async (userInput) => {
     });
 
     const remainingCredits = creditsResponse.data.data.credits;
-    
+
     if (remainingCredits <= 0) {
       setMessages([...updatedMessages, { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false }]);
       setIsLoading(false);
       return;
     }
 
-    // ✅ Get AI Response
-    const aiResponse = await axios.post("http://127.0.0.1:8000/chat", { user_input: userInput });
+    const aiResponse = await axios.post("http://127.0.0.1:8001/api/chat", { user_input: userInput });
+    console.log("Backend Response:", aiResponse.data); // Log the response
 
-    if (!aiResponse.data || !aiResponse.data.answer) {
+    // Check if the response contains the expected structure
+    if (!aiResponse.data || !aiResponse.data.answers) {
       throw new Error("Invalid response from AI model");
     }
 
-    const botReply = aiResponse.data.answer;
+    // Format the response into a single string
+    const botReply = aiResponse.data.answers
+      .map(answer => {
+        // Check if the response field exists and is not empty
+        if (answer.response && answer.response.trim() !== "") {
+          return `**${answer.book_title}** by ${answer.author}\n${answer.response}`;
+        } else {
+          return `**${answer.book_title}** by ${answer.author}\nNo response available.`;
+        }
+      })
+      .join('\n\n');
 
-    // ✅ Append AI response to UI
     const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
     setMessages(newMessages);
-    setNewBotResponse(botReply); // 🔹 Pass response to trigger animation
+    setNewBotResponse(botReply);
 
-    // ✅ Store chat in MongoDB
     await axios.post(`${API_URL}/api/chats`, {
       customer_id: user.customer_id,
       query: userInput,
-      response: botReply, 
+      response: botReply,
       date: new Date().toISOString(),
     }, {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       withCredentials: true,
     });
 
-    // ✅ Update chat history
     setChatHistory((prev) => [
       { title: userInput.length > 21 ? userInput : userInput, date: new Date().toLocaleDateString(), messages: newMessages },
       ...prev,
@@ -134,7 +141,7 @@ const sendMessage = async (userInput) => {
     fetchCredits();
   } catch (error) {
     console.error("Error fetching chatbot response:", error.response?.data || error.message);
-    setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
+    setMessages([...updatedMessages, { text: "Error getting response. Please try again.", isUser: false }]);
   }
 
   setIsLoading(false);

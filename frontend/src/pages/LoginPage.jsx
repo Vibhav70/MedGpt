@@ -31,7 +31,7 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="relative">
-            <FaUser className="absolute left-3 top-3 text-gray-400" />
+            <FaUser className="absolute left-3 top-4 text-gray-400" />
             <input 
               type="email" 
               placeholder="Email Address" 
@@ -43,7 +43,7 @@ export default function LoginPage() {
           </div>
           
           <div className="relative">
-            <FaLock className="absolute left-3 top-3 text-gray-400" />
+            <FaLock className="absolute left-3 top-4 text-gray-400" />
             <input 
               type="password" 
               placeholder="Password" 

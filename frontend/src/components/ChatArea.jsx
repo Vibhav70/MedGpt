@@ -16,25 +16,34 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // 🔹 Animate only if the newBotResponse exists (i.e., a fresh response from AI)
   useEffect(() => {
     if (!newBotResponse) return;
 
-    let displayed = '';
-    const words = newBotResponse.split(' ');
-    let index = 0;
+    try {
+      const parsedResponse = JSON.parse(newBotResponse);
+      const formattedResponse = parsedResponse.answers.map(answer => 
+        `**${answer.book_title}** by ${answer.author}\n${answer.response}`
+      ).join('\n\n');
 
-    const interval = setInterval(() => {
-      if (index < words.length) {
-        displayed += (index > 0 ? ' ' : '') + words[index];
-        setDisplayedText(displayed);
-        index++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 50); 
+      let displayed = '';
+      const words = formattedResponse.split(' ');
+      let index = 0;
 
-    return () => clearInterval(interval);
+      const interval = setInterval(() => {
+        if (index < words.length) {
+          displayed += (index > 0 ? ' ' : '') + words[index];
+          setDisplayedText(displayed);
+          index++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 50); 
+
+      return () => clearInterval(interval);
+    } catch (error) {
+      console.error("Error parsing JSON response:", error);
+      setDisplayedText(newBotResponse); // Fallback to plain text if parsing fails
+    }
   }, [newBotResponse]);
 
   return (
@@ -64,12 +73,11 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
               <ReactMarkdown>
                 {msg.isUser 
                   ? msg.text 
-                  : (msg.text === newBotResponse ? displayedText : msg.text) // 🔹 Animate only if it’s the latest bot response
+                  : (msg.text === newBotResponse ? displayedText : msg.text)
                 }
               </ReactMarkdown>
             </motion.div>
 
-            {/* Copy and Listen Buttons */}
             {!msg.isUser && (
               <div className="flex gap-3 ml-3">
                 <button
@@ -105,7 +113,6 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
         </div>
       ))}
 
-      {/* Show Loader when bot is responding */}
       {isLoading && (
         <div className="flex items-center gap-2 mt-4">
           <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-1 md:mr-2 mt-2 rounded-full" />
@@ -126,5 +133,5 @@ ChatArea.propTypes = {
     })
   ).isRequired,
   isLoading: PropTypes.bool.isRequired,
-  newBotResponse: PropTypes.string, // New prop to handle AI responses
+  newBotResponse: PropTypes.string,
 };

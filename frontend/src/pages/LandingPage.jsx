@@ -1,4 +1,5 @@
 import HeaderMain from "../components/HeaderMain";
+import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   return (
@@ -9,9 +10,9 @@ const LandingPage = () => {
         <p className="text-xl md:text-2xl mt-6 opacity-95 max-w-2xl mx-auto leading-relaxed">
           Your AI-Powered Medical Study Companion. Get direct references and answers to all your textbook questions instantly.
         </p>
-        <button className="mt-8 bg-[#13c2dd] text-white px-10 py-4 rounded-full text-xl font-semibold shadow-lg hover:bg-[#16a0a0] transition-all duration-300 transform hover:scale-105">
+        <Link to="/login"><button className="mt-8 bg-[#13c2dd] text-white px-10 py-4 rounded-full text-xl font-semibold shadow-lg hover:bg-[#16a0a0] transition-all duration-300 transform hover:scale-105">
           Get Started
-        </button>
+        </button></Link>
       </section>
       
       <section className="bg-white shadow-2xl rounded-3xl p-10 max-w-4xl w-full mt-12 text-gray-800">
