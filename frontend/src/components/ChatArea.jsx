@@ -11,13 +11,18 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const bottomRef = useRef(null);
   const chatRefs = useRef({}); 
+  const [isNewResponse, setIsNewResponse] = useState(false);
+  const isAnimating = useRef(false);  // Track if animation is running
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   useEffect(() => {
-    if (!newBotResponse) return;
+    if (!newBotResponse || isAnimating.current) return; 
+
+    isAnimating.current = true;  // Prevent multiple triggers
+    setIsNewResponse(true);
 
     try {
       const parsedResponse = JSON.parse(newBotResponse);
@@ -36,13 +41,20 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
           index++;
         } else {
           clearInterval(interval);
+          setIsNewResponse(false);
+          isAnimating.current = false;  // Reset animation state
         }
       }, 50); 
 
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        isAnimating.current = false; // Reset if component unmounts
+      };
     } catch (error) {
       console.error("Error parsing JSON response:", error);
       setDisplayedText(newBotResponse); // Fallback to plain text if parsing fails
+      setIsNewResponse(false);
+      isAnimating.current = false;
     }
   }, [newBotResponse]);
 
@@ -73,7 +85,7 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
               <ReactMarkdown>
                 {msg.isUser 
                   ? msg.text 
-                  : (msg.text === newBotResponse ? displayedText : msg.text)
+                  : (msg.text === newBotResponse && isNewResponse ? displayedText : msg.text)
                 }
               </ReactMarkdown>
             </motion.div>
