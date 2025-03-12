@@ -12,7 +12,8 @@ export default function Sidebar({ isExpanded, chatHistory = [], loadChatFromHist
             {chatHistory.length === 0 ? (
               <li className="text-gray-500">No chat history found.</li>
             ) : (
-              chatHistory.map((chat) => (
+              // Reverse the chatHistory array before mapping
+              [...chatHistory].reverse().map((chat) => (
                 <li 
                   key={chat._id} // Ensure unique key for React
                   className="cursor-pointer overflow-x-hidden text-nowrap py-1 px-2 hover:bg-[#eee1ff] rounded-md transition-all duration-200 fading-box"

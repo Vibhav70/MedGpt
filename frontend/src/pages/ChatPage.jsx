@@ -107,10 +107,9 @@ const sendMessage = async (userInput) => {
       throw new Error("Invalid response from AI model");
     }
 
-    // Format the response into a single string
+    // Format the response into a single string for display
     const botReply = aiResponse.data.answers
       .map(answer => {
-        // Check if the response field exists and is not empty
         if (answer.response && answer.response.trim() !== "") {
           return `**${answer.book_title}** by ${answer.author}\n${answer.response}`;
         } else {
@@ -121,8 +120,11 @@ const sendMessage = async (userInput) => {
 
     const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
     setMessages(newMessages);
-    setNewBotResponse(botReply);
 
+    // Pass the original JSON response to ChatArea
+    setNewBotResponse(JSON.stringify(aiResponse.data));
+
+    // Save the chat to MongoDB
     await axios.post(`${API_URL}/api/chats`, {
       customer_id: user.customer_id,
       query: userInput,
@@ -133,8 +135,13 @@ const sendMessage = async (userInput) => {
       withCredentials: true,
     });
 
+    // Update chat history
     setChatHistory((prev) => [
-      { title: userInput.length > 21 ? userInput : userInput, date: new Date().toLocaleDateString(), messages: newMessages },
+      {
+        title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
+        date: new Date().toLocaleDateString(),
+        messages: newMessages,
+      },
       ...prev,
     ]);
 

@@ -10,76 +10,75 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const bottomRef = useRef(null);
-  const chatRefs = useRef({}); 
+  const chatRefs = useRef({});
   const [isNewResponse, setIsNewResponse] = useState(false);
-  const isAnimating = useRef(false);  // Track if animation is running
+  const isAnimating = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   useEffect(() => {
-    if (!newBotResponse || isAnimating.current) return; 
+    if (!newBotResponse || isAnimating.current) return;
 
-    isAnimating.current = true;  // Prevent multiple triggers
+    isAnimating.current = true;
     setIsNewResponse(true);
 
     try {
       const parsedResponse = JSON.parse(newBotResponse);
-      const formattedResponse = parsedResponse.answers.map(answer => 
-        `**${answer.book_title}** by ${answer.author}\n${answer.response}`
-      ).join('\n\n');
 
-      let displayed = '';
-      const words = formattedResponse.split(' ');
+      const formattedResponses = parsedResponse.answers
+        .map((answer, index) => 
+          `**${index + 1}. ${answer.book_title}**  \n*by ${answer.author}*  \n\n${answer.response}`
+        ).join('\n\n---\n\n'); // Ensures proper spacing
+
+      const words = formattedResponses.split(' ');
       let index = 0;
 
-      const interval = setInterval(() => {
+      const typeWordByWord = () => {
         if (index < words.length) {
-          displayed += (index > 0 ? ' ' : '') + words[index];
-          setDisplayedText(displayed);
+          setDisplayedText(prev => prev + (index > 0 ? ' ' : '') + words[index]);
           index++;
+          setTimeout(typeWordByWord, 50); // Adjust speed
         } else {
-          clearInterval(interval);
           setIsNewResponse(false);
-          isAnimating.current = false;  // Reset animation state
+          isAnimating.current = false;
         }
-      }, 50); 
-
-      return () => {
-        clearInterval(interval);
-        isAnimating.current = false; // Reset if component unmounts
       };
+
+      setDisplayedText('');
+      typeWordByWord();
+
     } catch (error) {
       console.error("Error parsing JSON response:", error);
-      setDisplayedText(newBotResponse); // Fallback to plain text if parsing fails
+      setDisplayedText(newBotResponse);
       setIsNewResponse(false);
       isAnimating.current = false;
     }
   }, [newBotResponse]);
 
   return (
-    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-2 mt-16 md:p-4">
+    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-4 mt-16 md:p-6">
       {messages.map((msg, index) => (
         <div
           key={index}
           ref={(el) => (chatRefs.current[index] = el)}
-          className={`flex md:mb-4 ${msg.isUser ? 'justify-end' : ''}`}
+          className={`flex md:mb-6 ${msg.isUser ? 'justify-end' : ''}`}
         >
           {!msg.isUser && (
             <div className='min-w-8'>
-              <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-1 md:mr-2 mt-2 rounded-full bg-white" />
+              <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-2 mt-2 rounded-full bg-white" />
             </div>
           )}
 
-          <div className='flex flex-col gap-2'>
+          <div className='flex flex-col gap-4'>
             <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className={`p-3 rounded-2xl text-md leading-7 shadow-md ${
+              className={`p-4 rounded-2xl text-md leading-7 shadow-md ${
                 msg.isUser ? 'text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-12' 
-                : 'text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap'
+                : 'text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap bg-gray-900'
               }`}
             >
               <ReactMarkdown>
@@ -90,8 +89,9 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
               </ReactMarkdown>
             </motion.div>
 
+            {/* Copy & Listen Buttons */}
             {!msg.isUser && (
-              <div className="flex gap-3 ml-3">
+              <div className="flex gap-4 ml-3">
                 <button
                   className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#ff8b37] text-sm transition-all"
                   onClick={() => navigator.clipboard.writeText(msg.text)}
@@ -125,9 +125,10 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
         </div>
       ))}
 
+      {/* Show Loader when bot is responding */}
       {isLoading && (
         <div className="flex items-center gap-2 mt-4">
-          <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-1 md:mr-2 mt-2 rounded-full" />
+          <img src={logo} alt="Bot Logo" className="h-10 w-8 mr-2 mt-2 rounded-full" />
           <Loader />
         </div>
       )}
