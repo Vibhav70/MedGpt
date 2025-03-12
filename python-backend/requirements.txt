@@ -20,3 +20,5 @@ pydantic
 tiktoken
 itsdangerous
 pymongo
+pymupdf 
+langchain-community  
