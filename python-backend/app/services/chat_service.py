@@ -3,9 +3,9 @@ from app.services.gemini_service import generate_gemini_response
 from app.config.settings import settings
 
 system_message = (
-    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context "
-    "from medical books and resources. If the information is not in the provided context, respond with: "
-    "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
+    """You are a helpful assistant specifically designed to provide comprehensive answers based on the given context 
+    from medical books and resources. If the information is not in the provided context, respond with: 
+    'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."""
 )
 
 def get_relevant_passage(query, max_results=4):
@@ -27,7 +27,7 @@ def make_rag_prompt(user_input, context, is_question):
         "Do not make up information or use external knowledge. "
         "Be concise and accurate."
     ) if is_question else (
-        "Provide a detailed explanation of the topic using ONLY the provided context. "
+        "Provide a detailed explanation(in points) of the topic using ONLY the provided context. "
         "If the context does not contain enough information, respond with: 'The provided context does not contain sufficient information.' "
         "Do not make up information or use external knowledge. "
         "Be concise and accurate."
@@ -60,3 +60,5 @@ def update_chat_history(history, user_input, assistant_response, max_history=5):
     history.append(f"User: {user_input}")
     history.append(f"Assistant: {assistant_response}")
     return history[-2 * max_history:]
+
+

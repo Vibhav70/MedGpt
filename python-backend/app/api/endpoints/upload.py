@@ -5,12 +5,13 @@ import json
 from app.services.pdf_service import process_and_upsert_pdf
 from app.models.schemas import UploadRequest
 from pinecone import Pinecone
+from app.config.settings import settings
 
 router = APIRouter()
 
 @router.post("/upload")
 async def upload_pdf(
-    request: str = Form(...),  # Accept the request payload as a JSON string
+    request: str = Form(...),  
     file: UploadFile = File(...)
 ):
     # Ensure the uploads directory exists

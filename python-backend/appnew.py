@@ -1,184 +1,151 @@
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pinecone import Pinecone
 import os
 from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_pinecone import PineconeVectorStore
+from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
+from typing import List, Dict, Any
+import asyncio
 
-# Load environment variables from a .env file
+# Load environment variables
 load_dotenv()
 
-# Pinecone configuration
+# Initialize models and connections
+model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-# Pinecone index name
-index_name = "testing2"
+# Pinecone indexes
+IMAGE_INDEX_NAME = "testing2"  # Your image index name
+TEXT_INDEX_NAME = "testing2"   # Your text content index name
 
-# Connect to Pinecone index
-index = pc.Index(index_name)
+image_index = pc.Index(IMAGE_INDEX_NAME)
+text_index = pc.Index(TEXT_INDEX_NAME)
 
-# Google API configuration
+# Google Gemini setup
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Initialize embeddings and vector store
-embeddings = HuggingFaceEmbeddings(model_name="all-mpnet-base-v2")
-vectorstore = PineconeVectorStore(
-    index=index,
-    embedding=embeddings,
-    text_key="text"  # Ensure this matches your Pinecone schema
-)
-
 # System message for the chatbot
 system_message = (
-    "You are a helpful assistant specifically designed to provide comprehensive answers based on the given context "
-    "from medical books and resources. If the information is not in the provided context, respond with: "
-    "'The provided context does not contain sufficient information.' Be detailed and accurate in your responses."
+    "You are a helpful assistant that provides comprehensive answers based on the given context. "
+    "If the information is not in the provided context, respond with: "
+    "'The provided context does not contain sufficient information.' "
+    "Be detailed and accurate in your responses."
 )
 
-# Function to retrieve relevant context with metadata
-def get_relevant_passage(query, vectorstore, max_results=4):
-    results = vectorstore.similarity_search(query, k=max_results)
-    print(f"Retrieved {len(results)} results from Pinecone.")  # Log number of results
-    
-    # Organize results by book and author
-    grouped_results = {}
-    for result in results:
-        book_title = result.metadata.get("book_title", "Unknown Book")
-        author = result.metadata.get("author", "Unknown Author")
-        key = (book_title, author)
-        
-        if key not in grouped_results:
-            grouped_results[key] = []
-        
-        grouped_results[key].append(result)
-        print(f"Added result from Book: {book_title}, Author: {author}")  # Log each result
-    
-    return grouped_results
-
-# Function to create the RAG prompt for topics or questions
-def make_rag_prompt(user_input, context, is_question):
-    if is_question:
-        instruction = (
-            "Answer the user's question in detail using ONLY the provided context. "
-            "If the context does not contain enough information, respond with: 'The provided context does not contain sufficient information.' "
-            "Do not make up information or use external knowledge. "
-            "Be concise and accurate."
-        )
-    else:
-        instruction = (
-            "Provide a detailed explanation of the topic using ONLY the provided context. "
-            "If the context does not contain enough information, respond with: 'The provided context does not contain sufficient information.' "
-            "Do not make up information or use external knowledge. "
-            "Be concise and accurate."
-        )
-    
-    return (
-        f"{instruction}\n\n"
-        f"### User Input:\n{user_input}\n\n"
-        f"### Context:\n{context}\n\n"
-        f"### Response:"
-    )
-
-# Generate a response from Google Gemini and append metadata to the final response
-def generate_answer(system_message, chat_history, prompt, grouped_results):
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    
-    responses = []
-    
-    for (book_title, author), results in grouped_results.items():
-        # Combine passages for this book and author
-        context = "\n".join(
-            f"- Page: {result.metadata.get('page_number', 'Unknown')}:\n"
-            f"{result.page_content.strip()}"
-            for result in results if result.page_content
-        )
-        print(f"Context for Book: {book_title}, Author: {author}:\n{context}")  # Log context
-        
-        # Create a RAG prompt for this book and author
-        book_prompt = make_rag_prompt(prompt, context, is_question=True)
-        print(f"Prompt for Book: {book_title}, Author: {author}:\n{book_prompt}")  # Log prompt
-        
-        # Combine system message and chat history
-        full_prompt = f"{system_message}\n\n" + "\n".join(chat_history) + f"\n{book_prompt}"
-        
-        # Generate the response
-        response = model.generate_content(full_prompt).text
-        print(f"Response for Book: {book_title}, Author: {author}:\n{response}")  # Log response
-        
-        # Append the response with book and author information
-        responses.append(
-            f"### Book: {book_title}\n"
-            f"### Author: {author}\n\n"
-            f"{response}\n"
-        )
-    
-    return "\n\n".join(responses)
-
-# Function to detect if the input is a question
-def is_question(input_text):
-    question_words = ["what", "why", "how", "when", "where", "who", "is", "are", "does", "do", "can", "should"]
-    return any(input_text.lower().startswith(word) for word in question_words)
-
-# Function to manage chat history length
-def update_chat_history(history, user_input, assistant_response, max_history=5):
-    history.append(f"User: {user_input}")
-    history.append(f"Assistant: {assistant_response}")
-    return history[-2 * max_history:]  # Retain only the last max_history exchanges
-
-# FastAPI app
 app = FastAPI()
 
-class ChatInput(BaseModel):
-    user_input: str
+class QueryRequest(BaseModel):
+    query: str
+    image_top_k: int = 3  # Number of image results to return
+    text_top_k: int = 5   # Number of text chunks to use for generation
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "your_secret_key"))
+async def query_image_index(query: str, top_k: int) -> List[Dict[str, Any]]:
+    """Query the image index and return relevant images with metadata"""
+    query_embedding = model.encode(query).tolist()
+    results = image_index.query(
+        vector=query_embedding,
+        top_k=top_k,
+        include_metadata=True
+    )
+    
+    return [
+        {
+            "image_url": match.metadata.get("cloudinary_url"),
+            "description": match.metadata.get("text", ""),
+            "score": match.score
+        }
+        for match in results.matches
+        if match.metadata.get("cloudinary_url")
+    ]
 
-# Add CORS Middleware (Optional but helpful for frontend interaction)
+async def query_text_index(query: str, top_k: int) -> List[Dict[str, Any]]:
+    """Query the text index and return relevant text chunks"""
+    query_embedding = model.encode(query).tolist()
+    results = text_index.query(
+        vector=query_embedding,
+        top_k=top_k,
+        include_metadata=True
+    )
+    
+    return [
+        {
+            "text": match.metadata.get("text"),
+            "page": match.metadata.get("page_number", "N/A"),
+            "source": match.metadata.get("book_title", "Unknown Source"),
+            "score": match.score
+        }
+        for match in results.matches
+        if match.metadata.get("text")
+    ]
+
+def generate_answer(query: str, text_chunks: List[Dict[str, Any]]) -> str:
+    """Generate an answer using Gemini with the retrieved text chunks"""
+    model = genai.GenerativeModel("gemini-1.5-pro")
+    
+    # Prepare context
+    context = "\n\n".join(
+        f"Source: {chunk['source']}\n"
+        f"Page: {chunk['page']}\n"
+        f"Content: {chunk['text']}"
+        for chunk in text_chunks
+    )
+    
+    prompt = f"""System: {system_message}
+    
+    Context:
+    {context}
+    
+    Question: {query}
+    
+    Answer the question using ONLY the provided context. Be detailed and accurate.
+    If the context doesn't contain enough information, say "The provided context does not contain sufficient information."
+    
+    Answer:"""
+    
+    response = model.generate_content(prompt)
+    return response.text
+
+@app.post("/query")
+async def query_both_indexes(request: QueryRequest):
+    try:
+        # Query both indexes concurrently
+        image_task = query_image_index(request.query, request.image_top_k)
+        text_task = query_text_index(request.query, request.text_top_k)
+        image_results, text_chunks = await asyncio.gather(image_task, text_task)
+        
+        # Generate answer from text chunks
+        answer = generate_answer(request.query, text_chunks)
+        
+        return {
+            "success": True,
+            "query": request.query,
+            "images": image_results,
+            "answer": answer,
+            "sources": [
+                {
+                    "source": chunk["source"],
+                    "page": chunk["page"],
+                    "relevance_score": chunk["score"]
+                }
+                for chunk in text_chunks
+            ]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing query: {str(e)}"
+        )
+
+# Add CORS middleware if needed
+from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change this to specific domains if needed
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.post("/chat")
-async def chat(chat_input: ChatInput, request: Request):
-    user_input = chat_input.user_input.strip()
-    if not user_input:
-        raise HTTPException(status_code=400, detail="Please enter a valid query or topic.")
-
-    # Initialize chat history if not present
-    if "chat_history" not in request.session:
-        request.session["chat_history"] = []
-
-    # Detect if the input is a question or a topic
-    input_is_question = is_question(user_input)
-
-    # Retrieve relevant context and create a RAG prompt
-    grouped_results = get_relevant_passage(user_input, vectorstore)
-    print(f"Grouped Results: {grouped_results}")  # Log grouped results
-
-    prompt = make_rag_prompt(user_input, "", input_is_question)  # Context is now handled in generate_answer
-    print(f"Constructed Prompt: {prompt}")  # Log constructed prompt
-
-    # Generate a response
-    answer = generate_answer(system_message, request.session["chat_history"], prompt, grouped_results)
-    print(f"Generated Answer: {answer}")  # Log generated answer
-
-    # Update chat history
-    request.session["chat_history"] = update_chat_history(
-        request.session["chat_history"], user_input, answer
-    )
-
-    # Return the answer
-    return {"answer": answer.strip()}
-
-# To run the FastAPI app, use the following command:
-# uvicorn app:app --reload

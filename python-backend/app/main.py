@@ -4,6 +4,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config.settings import settings
 from app.api.endpoints.chat import router as chat_router
 from app.api.endpoints.upload import router as upload_router
+from app.api.endpoints.chat_premium import router as chat_premium_router 
 
 app = FastAPI()
 
@@ -18,4 +19,5 @@ app.add_middleware(
 )
 
 app.include_router(chat_router, prefix="/api")
-app.include_router(upload_router, prefix="/api")  # Add the upload router
+app.include_router(upload_router, prefix="/api")
+app.include_router(chat_premium_router, prefix="/api") 
