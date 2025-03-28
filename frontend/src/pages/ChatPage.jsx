@@ -99,7 +99,7 @@ const sendMessage = async (userInput) => {
       return;
     }
 
-    const aiResponse = await axios.post("http://127.0.0.1:8000/api/chat", { user_input: userInput });
+    const aiResponse = await axios.post("http://127.0.0.1:8001/api/chat", { user_input: userInput });
     console.log("Backend Response:", aiResponse.data); // Log the response
 
     // Check if the response contains the expected structure
