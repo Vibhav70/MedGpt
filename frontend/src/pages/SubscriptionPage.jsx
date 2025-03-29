@@ -58,39 +58,49 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#141131] via-[#720b36] to-black text-white px-4">
-      <motion.h1 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.5 }} 
-        className="text-4xl font-bold mb-10 md:mb-20 text-center"
+    <div className="min-h-screen bg-white text-gray-800 px-4 py-16">
+      <motion.h1
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-4xl font-extrabold mb-4 text-center"
       >
-        Choose Your Subscription Plan
+        Upgrade to MedLearn Pro
       </motion.h1>
+      <p className="text-green-600 text-center mb-12">
+        Get unlimited access to our premium features
+      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
-        {PLANS.map(plan => (
+      <div className="flex flex-col lg:flex-row justify-center items-center gap-8 max-w-6xl mx-auto">
+        {PLANS.map((plan) => (
           <motion.div
             key={plan.id}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.05, boxShadow: "0px 0px 20px rgba(255, 255, 255, 0.2)" }}
+            whileHover={{ scale: 1.03 }}
             transition={{ duration: 0.3 }}
-            className={`relative flex flex-col justify-between p-8 bg-white bg-opacity-10 border-2 backdrop-blur-md rounded-xl text-center transition-all duration-300 shadow-lg cursor-pointer ${
-              selectedPlan === plan.id ? "border-[#ff8b37] bg-opacity-20" : "border-gray-500"
-            }`}
             onClick={() => setSelectedPlan(plan.id)}
+            className={`w-full max-w-sm border rounded-xl p-6 shadow-md cursor-pointer transition-all ${
+              selectedPlan === plan.id
+                ? "border-[#ff8b37] bg-orange-50"
+                : "border-gray-200 bg-white"
+            }`}
           >
-            <h2 className="text-3xl font-bold mb-2">{plan.name}</h2>
-            <p className="text-lg text-gray-300">{plan.duration}</p>
-            <p className="text-2xl font-bold my-3">{plan.credits} Tokens</p>
-            <p className="text-xl font-semibold text-[#ff8b37]">₹{plan.price}</p>
-            
-            {selectedPlan === plan.id && (
-              <div className="absolute top-3 right-3 bg-[#ff8b37] text-white px-2 py-1 text-xs font-semibold rounded-full">
-                Selected
-              </div>
-            )}
+            <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
+            <div className="text-3xl font-bold text-black mb-1">₹{plan.price}</div>
+            <p className="text-sm text-gray-600 mb-4">per {plan.duration}</p>
+
+            <button className="w-full bg-green-100 text-gray-800 font-medium py-2 rounded-md mb-6 hover:bg-green-200 transition">
+              {selectedPlan === plan.id ? "Selected" : "Select"}
+            </button>
+
+            <ul className="text-sm text-gray-700 space-y-2">
+              <li className="flex items-start"><span className="mr-2 text-green-600 font-bold">✓</span>{plan.credits} tokens</li>
+              <li className="flex items-start"><span className="mr-2 text-green-600 font-bold">✓</span>{Math.floor(plan.credits / 33)} references</li>
+              <li className="flex items-start"><span className="mr-2 text-green-600 font-bold">✓</span>{Math.ceil(plan.credits / 100)} image upload{Math.ceil(plan.credits / 100) > 1 ? "s" : ""}</li>
+              <li className="flex items-start"><span className="mr-2 text-green-600 font-bold">✓</span>{plan.name === "Premium" ? "High quality" : "Standard quality"}</li>
+              <li className="flex items-start"><span className="mr-2 text-green-600 font-bold">✓</span>{plan.name === "Premium" ? "12-hour response time" : "24-hour response time"}</li>
+            </ul>
           </motion.div>
         ))}
       </div>
@@ -98,7 +108,7 @@ export default function SubscriptionPage() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="mt-8 md:mt-16 bg-[#ff8b37] px-6 py-3 rounded-lg text-lg font-semibold transition-all duration-300 hover:bg-opacity-80 shadow-md"
+        className="mt-12 bg-[#ff8b37] px-6 py-3 rounded-lg text-lg font-semibold text-white transition-all duration-300 hover:bg-opacity-90 shadow-md"
         disabled={loading}
         onClick={purchaseSubscription}
       >

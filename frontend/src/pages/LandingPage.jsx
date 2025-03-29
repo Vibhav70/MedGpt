@@ -1,35 +1,65 @@
 import HeaderMain from "../components/HeaderMain";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 
 const LandingPage = () => {
   return (
     <div className="bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] min-h-screen flex flex-col items-center text-black pt-6 pb-12">
       <HeaderMain />
-      <section className="text-center py-20 px-6 max-w-4xl">
-        <h1 className="text-4xl md:text-6xl font-extrabold drop-shadow-lg animate-fade-in">MedBookGPT</h1>
-        <p className="text-xl md:text-2xl mt-6 opacity-95 max-w-2xl mx-auto leading-relaxed">
-          Your AI-Powered Medical Study Companion. Get direct references and answers to all your textbook questions instantly.
-        </p>
-        <Link to="/login"><button className="mt-8 bg-[#13c2dd] text-white px-10 py-4 rounded-full text-xl font-semibold shadow-lg hover:bg-[#16a0a0] transition-all duration-300 transform hover:scale-105">
-          Get Started
-        </button></Link>
-      </section>
-      
-      <section className="bg-white shadow-2xl rounded-3xl p-10 max-w-4xl w-full mt-12 text-gray-800">
-        <h2 className="text-4xl font-bold text-center text-blue-700">Why Choose MedBookGPT?</h2>
-        <ul className="mt-8 space-y-5 text-xl">
-          <li className="flex items-center gap-4"><span className="text-blue-500 text-3xl">🔍</span> Instant answers to textbook queries</li>
-          <li className="flex items-center gap-4"><span className="text-blue-500 text-3xl">📚</span> Reliable, reference-backed information</li>
-          <li className="flex items-center gap-4"><span className="text-blue-500 text-3xl">🩺</span> Tailored for medical students</li>
-          <li className="flex items-center gap-4"><span className="text-blue-500 text-3xl">⚡</span> Saves time on research & note-making</li>
-        </ul>
-      </section>
-      
-      {/* <section className="max-w-3xl mt-14 text-center bg-white p-8 rounded-2xl shadow-2xl text-gray-900">
-        <h2 className="text-4xl font-bold text-blue-700">Trusted by Medical Students</h2>
-        <p className="text-xl mt-6 italic">&quot;MedBookGPT has been a lifesaver for my studies! Fast, reliable, and super helpful.&quot;</p>
-        <p className="text-gray-700 mt-4 font-semibold">- Alex, Medical Student</p>
-      </section> */}
+      <div className="font-sans text-gray-800">
+        {/* Hero Section */}
+        <div className="relative bg-gray-100 rounded-xl overflow-hidden shadow-lg">
+          <img
+            src="/path-to-your-image.jpg"
+            alt="Medical student studying"
+            className="w-full h-96 object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-start px-10">
+            <h1 className="text-4xl font-extrabold text-white mb-4">
+              Learn smarter, not harder.
+            </h1>
+            <p className="text-white text-lg max-w-xl mb-6">
+              Meducate is the most efficient way to learn medicine. We&apos;ve
+              reimagined the textbook and made it interactive, so you can learn
+              faster and remember more.
+            </p>
+            <div className="flex gap-4">
+              <button className="bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+                Try for Free
+              </button>
+              <button className="bg-white text-black font-semibold px-6 py-2 rounded-lg hover:bg-gray-200 transition">
+                Watch Video
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 1 */}
+        <div className="px-8 mt-16 max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-extrabold mb-4">
+            What makes Meducate different
+          </h2>
+          <p className="text-lg mb-6">
+            We know that learning medicine is tough. That’s why we’ve built an
+            all-in-one study platform that covers every aspect of medical
+            education. With Meducate, you can access everything you need to
+            succeed in one place.
+          </p>
+          <button className="bg-blue-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+            Try for Free
+          </button>
+        </div>
+
+        {/* Section 2 */}
+        <div className="px-8 mt-16 mb-20 max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-extrabold mb-4">Who uses Meducate</h2>
+          <p className="text-lg">
+            Meducate is used by students, residents, and healthcare
+            professionals around the world. Whether you’re studying for the
+            MCAT, USMLE, or any other medical exam, Meducate has everything you
+            need to succeed.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
