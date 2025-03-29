@@ -87,9 +87,9 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
               transition={{ duration: 0.3 }}
               className={`p-4 rounded-2xl text-md leading-7 shadow-md ${
                 msg.isUser
-                  ? "text-blue-800 px-4 py-3 bg-blue-100 rounded-tr-sm ml-12"
-                  : "text-white px-4 py-3 rounded-tl-sm max-w-[800px] overflow-x-auto text-wrap bg-gray-900"
-              }`}
+                  ? "bg-[#e0f2ff] text-blue-900 rounded-tr-sm ml-12"
+                  : "bg-white text-gray-800 border border-gray-200 rounded-tl-sm shadow max-w-[800px] overflow-x-auto"
+              }`}              
             >
               <ReactMarkdown>
                 {msg.isUser
