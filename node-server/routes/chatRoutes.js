@@ -31,7 +31,7 @@ router.put("/:id", updateChatById);
 router.delete("/:id", deleteChatById);
 
 // Route to purchase credits
-router.post("/purchase-credits", purchaseCredits);
+// router.post("/purchase-credits", purchaseCredits);
 
 module.exports = router;
 
