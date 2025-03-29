@@ -33,9 +33,30 @@ export default function SubscriptionPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        return resolve(true);
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const purchaseSubscription = async () => {
     if (!selectedPlan) return alert("Please select a plan.");
     setLoading(true);
+
+    const razorpayLoaded = await loadRazorpayScript();
+    if (!razorpayLoaded) {
+      alert("Razorpay SDK failed to load. Are you online?");
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await axios.post(
