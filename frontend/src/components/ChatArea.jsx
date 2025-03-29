@@ -93,15 +93,15 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
           )}
 
           {/* Message bubble */}
-          <div className="flex flex-col gap-3 max-w-[90%]">
+          <div className="flex flex-col gap-1 md:gap-3 max-w-[90%]">
             <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className={`px-4 py-3 rounded-2xl text-[15px] leading-6 shadow-md whitespace-pre-line ${
+              className={`px-4 py-3 rounded-2xl text-[15px] leading-6 shadow-md whitespace-pre-line my-2 md:my-0 ${
                 msg.isUser
                   ? "bg-[#e0f2ff] text-blue-900 rounded-tr-sm ml-12"
-                  : "bg-white text-gray-800 border border-gray-200 rounded-tl-md"
+                  : "bg-white text-gray-800 border border-gray-200 rounded-tl-md mr-12"
               }`}
             >
               <ReactMarkdown className="markdown-content">
@@ -115,9 +115,9 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
 
             {/* Copy & Listen Buttons */}
             {!msg.isUser && (
-              <div className="flex gap-4 ml-2 text-sm">
+              <div className="flex gap-1 md:gap-4 ml-2 text-sm">
                 <button
-                  className="flex items-center gap-2 active:scale-95 hover:scale-105 px-3 py-1 rounded-md text-green-700 hover:bg-green-100 transition"
+                  className="flex items-center gap-2 active:scale-95 hover:scale-105 px-2 md:px-3 py-1 rounded-md text-green-700 hover:bg-green-100 transition"
                   onClick={() => navigator.clipboard.writeText(msg.text)}
                 >
                   <FaCopy size={16} />
@@ -125,7 +125,7 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
                 </button>
 
                 <button
-                  className="flex items-center gap-2 active:scale-95 hover:scale-105 px-3 py-1 rounded-md text-blue-600 hover:bg-blue-100 transition"
+                  className="flex items-center gap-2 active:scale-95 hover:scale-105 px-2 md:px-3 py-1 rounded-md text-blue-600 hover:bg-blue-100 transition"
                   onClick={() => {
                     if (isSpeaking) {
                       speechSynthesis.cancel();
