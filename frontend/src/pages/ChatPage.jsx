@@ -16,27 +16,32 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [displayedText, setDisplayedText] = useState("");
-  const [credits, setCredits] = useState(null);
   const [newBotResponse, setNewBotResponse] = useState(null);
 
   // Fetch user credits when chat page loads
-  const fetchCredits = async () => {
+  const [credits, setCredits] = useState(null);
+  const [subscriptionType, setSubscriptionType] = useState("free");
+  const [expiryDate, setExpiryDate] = useState(null);
+
+  const fetchSubscriptionStatus = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/api/auth/credits`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      setCredits(response.data.data.credits);
+      const response = await axios.get(
+        `${API_URL}/api/subscription/status/${user.customer_id}`
+      );
+      const data = response.data.data;
+
+      setCredits(data.credits);
+      setSubscriptionType(data.subscription_type);
+      setExpiryDate(data.expiry_date);
     } catch (error) {
-      console.error("Error fetching credits:", error);
+      console.error("Error fetching subscription status:", error);
     }
   };
 
   // Fetch all user chats when ChatPage loads
   useEffect(() => {
     if (!user) return;
-  
+
     const fetchChatHistory = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -47,19 +52,22 @@ export default function ChatPage() {
             withCredentials: true,
           }
         );
-  
+
         if (Array.isArray(response.data.data)) {
           // Format chat history correctly
           const formattedChats = response.data.data.map((chat) => ({
             _id: chat._id, // Store the unique chat ID
-            title: chat.query.length > 25 ? chat.query.slice(0, 25) + "..." : chat.query,
+            title:
+              chat.query.length > 25
+                ? chat.query.slice(0, 25) + "..."
+                : chat.query,
             date: new Date(chat.date).toLocaleDateString(),
             messages: [
               { text: chat.query, isUser: true },
               { text: chat.response, isUser: false },
             ],
           }));
-  
+
           setChatHistory(formattedChats);
         } else {
           setChatHistory([]);
@@ -69,97 +77,119 @@ export default function ChatPage() {
         setChatHistory([]);
       }
     };
-  
+
     fetchChatHistory();
-    fetchCredits();
-  }, [user]);  
-  
+    fetchSubscriptionStatus();
+  }, [user]);
 
-// Handle sending message
-const sendMessage = async (userInput) => {
-  if (!userInput.trim()) return;
+  // Handle sending message
+  const sendMessage = async (userInput) => {
+    if (!userInput.trim()) return;
 
-  const updatedMessages = [...messages, { text: userInput, isUser: true }];
-  setMessages(updatedMessages);
-  setDisplayedText("");
-  setIsLoading(true);
+    const updatedMessages = [...messages, { text: userInput, isUser: true }];
+    setMessages(updatedMessages);
+    setDisplayedText("");
+    setIsLoading(true);
 
-  try {
-    const token = localStorage.getItem("token");
-    const creditsResponse = await axios.get(`${API_URL}/api/auth/credits`, {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
-    });
+    try {
+      const token = localStorage.getItem("token");
+      const creditsResponse = await axios.get(`${API_URL}/api/auth/credits`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
 
-    const remainingCredits = creditsResponse.data.data.credits;
+      const remainingCredits = creditsResponse.data.data.credits;
 
-    if (remainingCredits <= 0) {
-      setMessages([...updatedMessages, { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false }]);
-      setIsLoading(false);
-      return;
-    }
+      if (remainingCredits <= 0) {
+        setMessages([
+          ...updatedMessages,
+          {
+            text: "⚠️ Out of credits! Please purchase more credits.",
+            isUser: false,
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
 
-    const aiResponse = await axios.post("http://127.0.0.1:8001/api/chat", { user_input: userInput });
-    console.log("Backend Response:", aiResponse.data); // Log the response
+      const aiResponse = await axios.post("http://127.0.0.1:8001/api/chat", {
+        user_input: userInput,
+      });
+      console.log("Backend Response:", aiResponse.data); // Log the response
 
-    // Check if the response contains the expected structure
-    if (!aiResponse.data || !aiResponse.data.answers) {
-      throw new Error("Invalid response from AI model");
-    }
+      // Check if the response contains the expected structure
+      if (!aiResponse.data || !aiResponse.data.answers) {
+        throw new Error("Invalid response from AI model");
+      }
 
-    // Format the response into a single string for display
-    const botReply = aiResponse.data.answers
-      .map(answer => {
-        if (answer.response && answer.response.trim() !== "") {
-          return `**${answer.book_title}** by ${answer.author}\n${answer.response}`;
-        } else {
-          return `**${answer.book_title}** by ${answer.author}\nNo response available.`;
+      // Format the response into a single string for display
+      const botReply = aiResponse.data.answers
+        .map((answer) => {
+          if (answer.response && answer.response.trim() !== "") {
+            return `**${answer.book_title}** by ${answer.author}\n${answer.response}`;
+          } else {
+            return `**${answer.book_title}** by ${answer.author}\nNo response available.`;
+          }
+        })
+        .join("\n\n");
+
+      const newMessages = [
+        ...updatedMessages,
+        { text: botReply, isUser: false },
+      ];
+      setMessages(newMessages);
+
+      // Pass the original JSON response to ChatArea
+      setNewBotResponse(JSON.stringify(aiResponse.data));
+
+      // Save the chat to MongoDB
+      await axios.post(
+        `${API_URL}/api/chats`,
+        {
+          customer_id: user.customer_id,
+          query: userInput,
+          response: botReply,
+          date: new Date().toISOString(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
         }
-      })
-      .join('\n\n');
+      );
 
-    const newMessages = [...updatedMessages, { text: botReply, isUser: false }];
-    setMessages(newMessages);
+      // Update chat history
+      setChatHistory((prev) => [
+        {
+          title:
+            userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
+          date: new Date().toLocaleDateString(),
+          messages: newMessages,
+        },
+        ...prev,
+      ]);
 
-    // Pass the original JSON response to ChatArea
-    setNewBotResponse(JSON.stringify(aiResponse.data));
+      fetchSubscriptionStatus();
+    } catch (error) {
+      console.error(
+        "Error fetching chatbot response:",
+        error.response?.data || error.message
+      );
+      setMessages([
+        ...updatedMessages,
+        { text: "Error getting response. Please try again.", isUser: false },
+      ]);
+    }
 
-    // Save the chat to MongoDB
-    await axios.post(`${API_URL}/api/chats`, {
-      customer_id: user.customer_id,
-      query: userInput,
-      response: botReply,
-      date: new Date().toISOString(),
-    }, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      withCredentials: true,
-    });
-
-    // Update chat history
-    setChatHistory((prev) => [
-      {
-        title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
-        date: new Date().toLocaleDateString(),
-        messages: newMessages,
-      },
-      ...prev,
-    ]);
-
-    fetchCredits();
-  } catch (error) {
-    console.error("Error fetching chatbot response:", error.response?.data || error.message);
-    setMessages([...updatedMessages, { text: "Error getting response. Please try again.", isUser: false }]);
-  }
-
-  setIsLoading(false);
-};
-
-  
+    setIsLoading(false);
+  };
 
   // Load chat when clicked from the history sidebar
   const loadChatFromHistory = async (chat) => {
     if (!chat || !chat._id) return; // Ensure chat exists
-  
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
@@ -169,7 +199,7 @@ const sendMessage = async (userInput) => {
           withCredentials: true,
         }
       );
-  
+
       if (response.data.success) {
         const fetchedChat = response.data.data;
         setMessages([
@@ -180,10 +210,12 @@ const sendMessage = async (userInput) => {
         console.error("Failed to fetch chat details");
       }
     } catch (error) {
-      console.error("Error loading chat history:", error.response?.data || error.message);
+      console.error(
+        "Error loading chat history:",
+        error.response?.data || error.message
+      );
     }
-  };  
-  
+  };
 
   const toggleSidebar = () => {
     setSidebarExpanded((prev) => !prev);
@@ -191,27 +223,45 @@ const sendMessage = async (userInput) => {
 
   return (
     <div className="flex h-fit min-h-screen">
-      <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} loadChatFromHistory={loadChatFromHistory} />
-
-      <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] transition-all duration-300 ${sidebarExpanded ? "ml-16" : "ml-0"}`}>
-  <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} credits={credits} subscriptionType={user.subscription_type} />
-
-  <div className="flex-grow">
-    {messages.length === 0 ? (
-      <Welcome onPromptClick={sendMessage} />
-    ) : (
-      <ChatArea
-        messages={messages}
-        displayedText={displayedText}
-        isLoading={isLoading}
-        newBotResponse={newBotResponse}
+      <Sidebar
+        isExpanded={sidebarExpanded}
+        toggleSidebar={toggleSidebar}
+        chatHistory={chatHistory}
+        loadChatFromHistory={loadChatFromHistory}
       />
-    )}
-  </div>
 
-  <MessageInput onSendMessage={sendMessage} sidebarExpanded={sidebarExpanded} isLoading={isLoading} />
-</div>
+      <div
+        className={`flex flex-col flex-1 bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] transition-all duration-300 ${
+          sidebarExpanded ? "ml-16" : "ml-0"
+        }`}
+      >
+        <Header
+          sidebarExpanded={sidebarExpanded}
+          toggleSidebar={toggleSidebar}
+          credits={credits}
+          subscriptionType={subscriptionType}
+          expiryDate={expiryDate}
+        />
 
+        <div className="flex-grow">
+          {messages.length === 0 ? (
+            <Welcome onPromptClick={sendMessage} />
+          ) : (
+            <ChatArea
+              messages={messages}
+              displayedText={displayedText}
+              isLoading={isLoading}
+              newBotResponse={newBotResponse}
+            />
+          )}
+        </div>
+
+        <MessageInput
+          onSendMessage={sendMessage}
+          sidebarExpanded={sidebarExpanded}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 }
