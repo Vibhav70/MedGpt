@@ -29,7 +29,7 @@ export default function MessageInput({ onSendMessage, sidebarExpanded, isLoading
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="Let's find some information"
-          className="flex-grow bg-transparent text-green-900 placeholder:text-green-700 text-[16px] md:text-lg outline-none px-2"
+          className="flex-grow bg-transparent text-green-900 placeholder:text-[#436a60] text-[16px] md:text-lg outline-none px-2"
         />
         
         {/* Paperclip icon */}

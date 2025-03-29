@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { useEffect, useState, useRef } from "react";
-import Loader from "../components/Loader";
+// import Loader from "../components/Loader";
 import { FaCopy, FaVolumeUp, FaPause } from "react-icons/fa";
 import logo from "/bot1.png";
 
@@ -63,100 +63,98 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
   }, [newBotResponse]);
 
   return (
-    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-4 mt-16 md:p-6">
-      {messages.map((msg, index) => (
-        <div
-          key={index}
-          ref={(el) => (chatRefs.current[index] = el)}
-          className={`flex md:mb-6 ${msg.isUser ? "justify-end" : ""}`}
-        >
+    <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-4 mt-20 md:p-6">
+    {messages.map((msg, index) => (
+      <div
+        key={index}
+        ref={(el) => (chatRefs.current[index] = el)}
+        className={`flex md:mb-6 ${msg.isUser ? "justify-end" : "justify-start"}`}
+      >
+        {/* Bot Avatar */}
+        {!msg.isUser && (
+          <div className="min-w-8">
+            <img
+              src={logo}
+              alt="Bot Logo"
+              className="h-10 w-10 mr-3 mt-2 rounded-full bg-white shadow"
+            />
+          </div>
+        )}
+  
+        {/* Message bubble */}
+        <div className="flex flex-col gap-3 max-w-[90%]">
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className={`px-4 py-3 rounded-2xl text-[16px] leading-7 shadow-md whitespace-pre-line ${
+              msg.isUser
+                ? "bg-[#e0f2ff] text-blue-900 rounded-tr-sm ml-12"
+                : " text-gray-800 border border-gray-200 rounded-tl-md"
+            }`}
+          >
+            <ReactMarkdown>
+              {msg.isUser
+                ? msg.text
+                : msg.text === newBotResponse && isNewResponse
+                ? displayedText
+                : msg.text}
+            </ReactMarkdown>
+          </motion.div>
+  
+          {/* Copy & Listen Buttons */}
           {!msg.isUser && (
-            <div className="min-w-8">
-              <img
-                src={logo}
-                alt="Bot Logo"
-                className="h-10 w-8 mr-2 mt-2 rounded-full bg-white"
-              />
+            <div className="flex gap-4 ml-2 text-sm">
+              <button
+                className="flex items-center gap-2 active:scale-95 hover:scale-105 px-3 py-1 rounded-md text-green-700 hover:bg-green-100 transition"
+                onClick={() => navigator.clipboard.writeText(msg.text)}
+              >
+                <FaCopy size={16} />
+                <span className="hidden md:inline">Copy</span>
+              </button>
+  
+              <button
+                className="flex items-center gap-2 active:scale-95 hover:scale-105 px-3 py-1 rounded-md text-blue-600 hover:bg-blue-100 transition"
+                onClick={() => {
+                  if (isSpeaking) {
+                    speechSynthesis.cancel();
+                    setIsSpeaking(false);
+                  } else {
+                    const utterance = new SpeechSynthesisUtterance(msg.text);
+                    utterance.rate = 1;
+                    utterance.pitch = 1;
+                    utterance.volume = 1;
+                    utterance.onend = () => setIsSpeaking(false);
+                    speechSynthesis.speak(utterance);
+                    setIsSpeaking(true);
+                  }
+                }}
+              >
+                {isSpeaking ? <FaPause size={16} /> : <FaVolumeUp size={16} />}
+                <span className="hidden md:inline">
+                  {isSpeaking ? "Pause" : "Listen"}
+                </span>
+              </button>
             </div>
           )}
-
-          <div className="flex flex-col gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`p-4 rounded-2xl text-md leading-7 shadow-md ${
-                msg.isUser
-                  ? "bg-[#e0f2ff] text-blue-900 rounded-tr-sm ml-12"
-                  : "bg-white text-gray-800 border border-gray-200 rounded-tl-sm shadow max-w-[800px] overflow-x-auto"
-              }`}              
-            >
-              <ReactMarkdown>
-                {msg.isUser
-                  ? msg.text
-                  : msg.text === newBotResponse && isNewResponse
-                  ? displayedText
-                  : msg.text}
-              </ReactMarkdown>
-            </motion.div>
-
-            {/* Copy & Listen Buttons */}
-            {!msg.isUser && (
-              <div className="flex gap-4 ml-3">
-                <button
-                  className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#ff8b37] text-sm transition-all"
-                  onClick={() => navigator.clipboard.writeText(msg.text)}
-                >
-                  <FaCopy size={18} />{" "}
-                  <span className="hidden md:inline">Copy</span>
-                </button>
-
-                <button
-                  className="flex items-center gap-2 active:scale-95 hover:scale-105 p-2 rounded-md text-[#43efff] text-sm transition-all"
-                  onClick={() => {
-                    if (isSpeaking) {
-                      speechSynthesis.cancel();
-                      setIsSpeaking(false);
-                    } else {
-                      const utterance = new SpeechSynthesisUtterance(msg.text);
-                      utterance.rate = 1;
-                      utterance.pitch = 1;
-                      utterance.volume = 1;
-                      utterance.onend = () => setIsSpeaking(false);
-                      speechSynthesis.speak(utterance);
-                      setIsSpeaking(true);
-                    }
-                  }}
-                >
-                  {isSpeaking ? (
-                    <FaPause size={18} />
-                  ) : (
-                    <FaVolumeUp size={18} />
-                  )}
-                  <span className="hidden md:inline">
-                    {isSpeaking ? "Pause" : "Listen"}
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
-      ))}
-
-      {/* Show Loader when bot is responding */}
-      {isLoading && (
-        <div className="flex items-center gap-2 mt-4">
-          <img
-            src={logo}
-            alt="Bot Logo"
-            className="h-10 w-8 mr-2 mt-2 rounded-full"
-          />
-          <Loader />
-        </div>
-      )}
-
-      <div ref={bottomRef} />
-    </div>
+      </div>
+    ))}
+  
+    {/* Loader while bot is thinking */}
+    {isLoading && (
+      <div className="flex items-center gap-3 mt-6 ml-1">
+        <img
+          src={logo}
+          alt="Bot Logo"
+          className="h-10 w-10 rounded-full shadow"
+        />
+        <div className="text-gray-500 italic animate-pulse">Thinking...</div>
+      </div>
+    )}
+  
+    <div ref={bottomRef} />
+  </div>  
   );
 }
 

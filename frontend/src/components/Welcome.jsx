@@ -9,7 +9,7 @@ export default function Welcome({ onPromptClick }) {
   ];
 
   return (
-    <div className="items-center justify-center w-fit max-w-4xl mx-auto my-24 px-4">
+    <div className="items-center justify-center w-fit max-w-4xl mx-auto my-32 px-4">
       {/* Heading */}
       <div className="w-full pl-2">
         <h2 className="decor text-4xl md:text-5xl font-bold text-left text-gray-800">
