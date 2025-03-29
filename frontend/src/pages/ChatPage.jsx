@@ -193,15 +193,25 @@ const sendMessage = async (userInput) => {
     <div className="flex h-fit min-h-screen">
       <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} loadChatFromHistory={loadChatFromHistory} />
 
-      <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#141131] via-[#720b36] to-black transition-all duration-300 ${sidebarExpanded ? "ml-16" : "ml-0"}`}>
-        <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} credits={credits} />
+      <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] transition-all duration-300 ${sidebarExpanded ? "ml-16" : "ml-0"}`}>
+  <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} credits={credits} />
 
-        <div className="flex-grow">
-          {messages.length === 0 ? <Welcome onPromptClick={sendMessage} /> : <ChatArea messages={messages} displayedText={displayedText} isLoading={isLoading} newBotResponse={newBotResponse}  />}
-        </div>
+  <div className="flex-grow">
+    {messages.length === 0 ? (
+      <Welcome onPromptClick={sendMessage} />
+    ) : (
+      <ChatArea
+        messages={messages}
+        displayedText={displayedText}
+        isLoading={isLoading}
+        newBotResponse={newBotResponse}
+      />
+    )}
+  </div>
 
-        <MessageInput onSendMessage={sendMessage} sidebarExpanded={sidebarExpanded} isLoading={isLoading} />
-      </div>
+  <MessageInput onSendMessage={sendMessage} sidebarExpanded={sidebarExpanded} isLoading={isLoading} />
+</div>
+
     </div>
   );
 }

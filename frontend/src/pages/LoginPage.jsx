@@ -40,7 +40,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full pl-10 p-3 bg-white/70 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full pl-10 p-3 bg-white/70 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
 
@@ -52,13 +52,13 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full pl-10 p-3 bg-white/70 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full pl-10 p-3 bg-white/70 text-gray-800 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 active:scale-95"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 active:scale-95"
           >
             Login
           </button>
@@ -66,7 +66,7 @@ export default function LoginPage() {
 
         <p className="text-gray-700 text-center mt-5">
           Don&apos;t have an account?
-          <Link to="/signup" className="text-blue-600 hover:underline ml-1">Register</Link>
+          <Link to="/signup" className="text-green-600 hover:underline ml-1">Register</Link>
         </p>
       </div>
     </div>

@@ -70,7 +70,7 @@ const LandingPage = () => {
           ].map((feature, i) => (
             <div
               key={i}
-              className="bg-white rounded-xl shadow-md p-6 flex flex-col items-start hover:shadow-lg transition"
+              className="bg-white rounded-xl shadow-md p-6 flex flex-col items-start hover:shadow-lg transition cursor-text"
             >
               {feature.icon}
               <h3 className="text-xl font-semibold mt-4 mb-2">
