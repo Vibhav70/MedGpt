@@ -3,6 +3,10 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const dotenv = require("dotenv");
+// Routes
+const authRoutes = require("./routes/authRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const purchaseRoutes = require("./routes/purchaseRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -26,12 +30,10 @@ app.use(
 // Middleware
 app.use(bodyParser.json());
 
-// Routes
-const authRoutes = require("./routes/authRoutes");
-const chatRoutes = require("./routes/chatRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/subscription", purchaseRoutes);
 
 // Server
 const PORT = process.env.PORT || 5000;

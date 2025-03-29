@@ -94,7 +94,6 @@ const logoutUser = (req, res) => {
   }
 };
 
-// ✅ Get Credits Function
 const getCredits = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -102,6 +101,16 @@ const getCredits = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const currentDate = new Date();
+
+    // Check for expiry
+    if (user.expiry_date && new Date(user.expiry_date) < currentDate) {
+      user.credits = 0;
+      user.subscription_type = "free";
+      user.premium = "No";
+      await user.save();
     }
 
     res.status(200).json({
@@ -113,6 +122,7 @@ const getCredits = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
+
 
 // ✅ Ensure `getCredits` is Exported
 module.exports = { loginUser, signupUser, logoutUser, getCredits };

@@ -7,7 +7,6 @@ const {
   getChatById,
   updateChatById,
   deleteChatById,
-  purchaseCredits,
 } = require("../controllers/chatController");
 
 const router = express.Router();
