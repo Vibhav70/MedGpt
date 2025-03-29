@@ -8,7 +8,7 @@ const LandingPage = () => {
       <HeaderMain />
       <div className="font-sans text-gray-800 w-full">
         {/* Hero Section */}
-        <div className="relative overflow-hidden shadow-none md:shadow-lg max-w-7xl mx-4 md:mx-auto">
+        <div className="relative rounded-xl overflow-hidden shadow-none md:shadow-lg max-w-7xl mx-4 md:mx-auto">
           <img
             src="https://res.cloudinary.com/do0mocwyc/image/upload/v1743280894/baunew38_gz9fbz.jpg"
             alt="Medical student studying"
