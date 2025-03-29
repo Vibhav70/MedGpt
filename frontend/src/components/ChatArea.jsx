@@ -16,26 +16,35 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
 
   useEffect(() => {
     if (!newBotResponse || isAnimating.current) return;
-  
+
     isAnimating.current = true;
     setIsNewResponse(true);
-  
+
     try {
       const parsedResponse = JSON.parse(newBotResponse);
-  
+
       const formattedResponses = parsedResponse.answers
         .map((answer, index) => {
-          const cleanedTitle = answer.book_title.trim().replace(/\s+/g, ' ');
-          return `${index + 1}. ${cleanedTitle}\nby ${answer.author.trim()}\n\n${answer.response.trim()}`;
+          const cleanedTitle = answer.book_title
+            .trim()
+            .replace(/\*\*/g, "") // Remove **
+            .replace(/\*/g, "") // Remove any single *
+            .replace(/\s+/g, " "); // Normalize spaces
+
+          return `${
+            index + 1
+          }. ${cleanedTitle.trim()}\nby ${answer.author.trim()}\n\n${answer.response.trim()}`;
         })
-        .join('\n\n---\n\n');
-  
+        .join("\n\n---\n\n");
+
       const words = formattedResponses.split(" ");
       let index = 0;
       let timeoutId;
-  
+
       const typeWordByWord = () => {
-        setDisplayedText((prev) => prev + (index > 0 ? " " : "") + words[index]);
+        setDisplayedText(
+          (prev) => prev + (index > 0 ? " " : "") + words[index]
+        );
         index++;
         if (index < words.length) {
           timeoutId = setTimeout(typeWordByWord, 25); // adjust typing speed here
@@ -44,11 +53,11 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
           isAnimating.current = false;
         }
       };
-  
+
       // Start animation
       setDisplayedText("");
       typeWordByWord();
-  
+
       // Cleanup on component unmount or re-trigger
       return () => {
         clearTimeout(timeoutId);
@@ -61,7 +70,6 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
       isAnimating.current = false;
     }
   }, [newBotResponse]);
-  
 
   return (
     <div className="h-[80vh] max-w-4xl m-auto overflow-y-scroll no-scrollbar p-4 mt-20 md:p-6">
@@ -94,7 +102,7 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
                 msg.isUser
                   ? "bg-[#e0f2ff] text-blue-900 rounded-tr-sm ml-12"
                   : "bg-white text-gray-800 border border-gray-200 rounded-tl-md"
-              }`}              
+              }`}
             >
               <ReactMarkdown className="markdown-content">
                 {msg.isUser

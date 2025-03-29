@@ -194,7 +194,7 @@ const sendMessage = async (userInput) => {
       <Sidebar isExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} chatHistory={chatHistory} loadChatFromHistory={loadChatFromHistory} />
 
       <div className={`flex flex-col flex-1 bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] transition-all duration-300 ${sidebarExpanded ? "ml-16" : "ml-0"}`}>
-  <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} credits={credits} />
+  <Header sidebarExpanded={sidebarExpanded} toggleSidebar={toggleSidebar} credits={credits} subscriptionType={user.subscription_type} />
 
   <div className="flex-grow">
     {messages.length === 0 ? (
