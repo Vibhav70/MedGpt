@@ -11,6 +11,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+console.log("🔑 Razorpay Keys:", {
+  id: process.env.RAZORPAY_KEY_ID,
+  secret: process.env.RAZORPAY_KEY_SECRET ? "✅ Loaded" : "❌ Missing",
+});
+
 // Define Subscription Plans
 const PLANS = {
   plan_1: {
@@ -18,21 +23,21 @@ const PLANS = {
     credits: 100,
     price: 500,
     duration: 1, // months
-    type: "basic"
+    type: "basic",
   },
   plan_2: {
     name: "Standard",
     credits: 300,
     price: 1200,
     duration: 3,
-    type: "standard"
+    type: "standard",
   },
   plan_3: {
     name: "Premium",
     credits: 600,
     price: 2000,
     duration: 6,
-    type: "premium"
+    type: "premium",
   },
 };
 
@@ -41,16 +46,25 @@ router.post("/create", async (req, res) => {
   try {
     const { customer_id, plan_id } = req.body;
 
+    console.log("➡️ Received:", { customer_id, plan_id });
+
     if (!customer_id || !plan_id || !PLANS[plan_id]) {
-      return res.status(400).json({ success: false, message: "Invalid plan or customer ID" });
+      console.warn("❌ Invalid customer_id or plan_id");
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid plan or customer ID" });
     }
 
     const plan = PLANS[plan_id];
+    console.log("📦 Plan matched:", plan);
+
+    const shortCustomerId = customer_id.slice(0, 8); // Use first 8 chars for brevity
+    const receiptId = `ord_${shortCustomerId}_${Date.now()}`.slice(0, 40);
 
     const options = {
-      amount: plan.price * 100, // in paisa
+      amount: plan.price * 100,
       currency: "INR",
-      receipt: `order_${customer_id}_${Date.now()}`,
+      receipt: receiptId,
       payment_capture: 1,
     };
 
@@ -62,12 +76,16 @@ router.post("/create", async (req, res) => {
       data: {
         order_id: order.id,
         amount: plan.price,
-        currency: "INR"
+        currency: "INR",
       },
     });
   } catch (error) {
-    console.error("❌ Error creating order:", error.message);
-    res.status(500).json({ success: false, message: "Server error. Try again later." });
+    console.error("❌ Error creating order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Try again later.",
+      error: error.message,
+    });
   }
 });
 
@@ -79,11 +97,19 @@ router.post("/verify", async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       customer_id,
-      plan_id
+      plan_id,
     } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !customer_id || !PLANS[plan_id]) {
-      return res.status(400).json({ success: false, message: "Invalid payment details" });
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature ||
+      !customer_id ||
+      !PLANS[plan_id]
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid payment details" });
     }
 
     // Verify Signature
@@ -93,14 +119,18 @@ router.post("/verify", async (req, res) => {
       .digest("hex");
 
     if (generated_signature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: "Payment verification failed" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Payment verification failed" });
     }
 
     const plan = PLANS[plan_id];
     const user = await User.findOne({ customer_id });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Calculate Expiry Date
@@ -129,7 +159,9 @@ router.post("/verify", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error verifying payment:", error.message);
-    res.status(500).json({ success: false, message: "Server error. Try again later." });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error. Try again later." });
   }
 });
 
@@ -140,10 +172,13 @@ router.get("/status/:customer_id", async (req, res) => {
     const user = await User.findOne({ customer_id });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    const isPremium = user.credits > 0 || new Date(user.expiry_date) > new Date();
+    const isPremium =
+      user.credits > 0 || new Date(user.expiry_date) > new Date();
     user.premium = isPremium ? "Yes" : "No";
 
     // Don't override existing subscription_type unless expired
@@ -160,12 +195,14 @@ router.get("/status/:customer_id", async (req, res) => {
         credits: user.credits,
         expiry_date: user.expiry_date,
         premium: user.premium,
-        subscription_type: user.subscription_type
+        subscription_type: user.subscription_type,
       },
     });
   } catch (error) {
     console.error("❌ Error checking subscription status:", error.message);
-    res.status(500).json({ success: false, message: "Server error. Try again later." });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error. Try again later." });
   }
 });
 

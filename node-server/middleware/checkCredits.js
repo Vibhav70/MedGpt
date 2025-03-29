@@ -4,7 +4,6 @@ exports.checkCredits = async (req, res, next) => {
   try {
     const { customer_id } = req.body;
 
-    // Ensure customer_id is provided
     if (!customer_id) {
       return res.status(400).json({
         success: false,
@@ -21,6 +20,21 @@ exports.checkCredits = async (req, res, next) => {
       });
     }
 
+    const currentDate = new Date();
+
+    // If subscription has expired
+    if (user.expiry_date && new Date(user.expiry_date) < currentDate) {
+      user.credits = 0;
+      user.subscription_type = "free";
+      user.premium = "No";
+      await user.save();
+
+      return res.status(403).json({
+        success: false,
+        message: "Your subscription has expired. Please renew to continue.",
+      });
+    }
+
     if (user.credits <= 0) {
       return res.status(403).json({
         success: false,
@@ -28,9 +42,10 @@ exports.checkCredits = async (req, res, next) => {
       });
     }
 
+    // All checks passed
     next();
   } catch (error) {
-    console.error("Error in checkCredits middleware:", error.message);
+    console.error("❌ Error in checkCredits middleware:", error.message);
     return res.status(500).json({
       success: false,
       message: "Server error",
