@@ -128,20 +128,21 @@ export default function SubscriptionPage() {
                   <span className="mr-2 text-green-600 font-bold">✓</span>
                   {plan.credits} tokens
                 </li>
-                <li className="flex items-start">
+                {/* <li className="flex items-start">
                   <span className="mr-2 text-green-600 font-bold">✓</span>
                   {Math.floor(plan.credits / 33)} references
-                </li>
+                </li> */}
                 <li className="flex items-start">
                   <span className="mr-2 text-green-600 font-bold">✓</span>
-                  {Math.ceil(plan.credits / 100)} image upload
-                  {Math.ceil(plan.credits / 100) > 1 ? "s" : ""}
+                  {plan.name === "Premium"
+                    ? "Text response with Images"
+                    : "Text response"}
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2 text-green-600 font-bold">✓</span>
                   {plan.name === "Premium"
-                    ? "High quality "
-                    : "Standard quality"}
+                    ? "High quality response"
+                    : "Standard quality response"}
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2 text-green-600 font-bold">✓</span>

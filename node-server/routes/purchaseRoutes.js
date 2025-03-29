@@ -11,14 +11,32 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Subscription Plans (Modify as needed)
+// Define Subscription Plans
 const PLANS = {
-  plan_1: { credits: 100, price: 500, duration: 1 }, // 1 Month
-  plan_2: { credits: 300, price: 1200, duration: 3 }, // 3 Months
-  plan_3: { credits: 600, price: 2000, duration: 6 }, // 6 Months
+  plan_1: {
+    name: "Basic",
+    credits: 100,
+    price: 500,
+    duration: 1, // months
+    type: "basic"
+  },
+  plan_2: {
+    name: "Standard",
+    credits: 300,
+    price: 1200,
+    duration: 3,
+    type: "standard"
+  },
+  plan_3: {
+    name: "Premium",
+    credits: 600,
+    price: 2000,
+    duration: 6,
+    type: "premium"
+  },
 };
 
-// 📌 **Create Razorpay Order**
+// 📌 Create Razorpay Order
 router.post("/create", async (req, res) => {
   try {
     const { customer_id, plan_id } = req.body;
@@ -29,12 +47,11 @@ router.post("/create", async (req, res) => {
 
     const plan = PLANS[plan_id];
 
-    // Create a Razorpay Order
     const options = {
-      amount: plan.price * 100, // Razorpay requires amount in paisa
+      amount: plan.price * 100, // in paisa
       currency: "INR",
       receipt: `order_${customer_id}_${Date.now()}`,
-      payment_capture: 1, // Auto capture payment
+      payment_capture: 1,
     };
 
     const order = await razorpay.orders.create(options);
@@ -42,7 +59,11 @@ router.post("/create", async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Order created successfully",
-      data: { order_id: order.id, amount: plan.price, currency: "INR" },
+      data: {
+        order_id: order.id,
+        amount: plan.price,
+        currency: "INR"
+      },
     });
   } catch (error) {
     console.error("❌ Error creating order:", error.message);
@@ -50,10 +71,16 @@ router.post("/create", async (req, res) => {
   }
 });
 
-// 📌 **Verify Payment & Update User Subscription**
+// 📌 Verify Payment & Update Subscription
 router.post("/verify", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, customer_id, plan_id } = req.body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      customer_id,
+      plan_id
+    } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !customer_id || !PLANS[plan_id]) {
       return res.status(400).json({ success: false, message: "Invalid payment details" });
@@ -70,9 +97,8 @@ router.post("/verify", async (req, res) => {
     }
 
     const plan = PLANS[plan_id];
-
-    // Find User & Update Subscription
     const user = await User.findOne({ customer_id });
+
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -84,9 +110,10 @@ router.post("/verify", async (req, res) => {
 
     // Update User Subscription Details
     user.credits += plan.credits;
-    user.premium = "Yes";
     user.purchase_date = currentDate;
     user.expiry_date = expiryDate;
+    user.subscription_type = plan.type; // "basic", "standard", or "premium"
+    user.premium = plan.type === "premium" ? "Yes" : "No"; // Optional legacy flag
 
     await user.save();
 
@@ -95,8 +122,9 @@ router.post("/verify", async (req, res) => {
       message: "Payment verified & subscription updated successfully",
       data: {
         credits: user.credits,
-        premium: user.premium,
+        subscription_type: user.subscription_type,
         expiry_date: user.expiry_date,
+        premium: user.premium,
       },
     });
   } catch (error) {
@@ -105,7 +133,7 @@ router.post("/verify", async (req, res) => {
   }
 });
 
-// 📌 **Check Subscription Status**
+// 📌 Check Subscription Status
 router.get("/status/:customer_id", async (req, res) => {
   try {
     const { customer_id } = req.params;
@@ -115,18 +143,24 @@ router.get("/status/:customer_id", async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Check if subscription is active
     const isPremium = user.credits > 0 || new Date(user.expiry_date) > new Date();
     user.premium = isPremium ? "Yes" : "No";
+
+    // Don't override existing subscription_type unless expired
+    if (!isPremium) {
+      user.subscription_type = "free";
+    }
+
     await user.save();
 
     res.status(200).json({
       success: true,
       message: "Subscription status fetched successfully",
       data: {
-        premium: user.premium,
         credits: user.credits,
         expiry_date: user.expiry_date,
+        premium: user.premium,
+        subscription_type: user.subscription_type
       },
     });
   } catch (error) {
