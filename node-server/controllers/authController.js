@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const generateCustomerId = require("../utils/generateId");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 // ✅ Login Function (Using Email Instead of Username)
 const loginUser = async (req, res) => {
@@ -45,37 +47,54 @@ const loginUser = async (req, res) => {
 
 // ✅ Signup Function
 const signupUser = async (req, res) => {
-  const { email, password } = req.body; // ✅ Change username → email
+  const { email, password } = req.body;
 
-  // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
 
   try {
-    // Check if the email already exists
-    const existingUser = await User.findOne({ email }); // ✅ Change username → email
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Generate a unique customer ID
     const customer_id = generateCustomerId();
-
-    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the new user
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
     const newUser = await User.create({
-      email, // ✅ Change username → email
+      email,
       password: hashedPassword,
       customer_id,
+      verificationToken,
+      verified: false,
+    });
+
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // or your preferred service
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+
+    await transporter.sendMail({
+      from: `"Your App" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Verify your email",
+      html: `<p>Thank you for registering. Click the link below to verify your email:</p>
+             <a href="${verificationLink}">${verificationLink}</a>`,
     });
 
     res.status(201).json({
-      message: "User registered successfully",
-      customer_id: newUser.customer_id,
+      message: "Signup successful. Please check your email to verify your account.",
     });
   } catch (err) {
     res.status(500).json({ message: "Signup failed", error: err.message });

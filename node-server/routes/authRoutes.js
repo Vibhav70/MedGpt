@@ -17,6 +17,26 @@ router.post("/signup", [
   check("password", "Password must be at least 6 characters").isLength({ min: 6 })
 ], signupUser);
 
+app.get("/verify-email", async (req, res) => {
+  const { token } = req.query;
+
+  try {
+    const user = await User.findOne({ verificationToken: token });
+
+    if (!user) {
+      return res.status(400).send("Invalid or expired token.");
+    }
+
+    user.verified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+    res.send("Email verified successfully! You can now log in.");
+  } catch (err) {
+    res.status(500).send("Server error during verification.");
+  }
+});
+
 // Logout Route
 router.post("/logout", logoutUser);
 

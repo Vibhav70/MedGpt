@@ -13,11 +13,12 @@ export default function SignupPage() {
     e.preventDefault();
     const response = await signup(email, password);
     if (response.success) {
-      navigate("/login");
+      navigate("/verify-email"); // ✅ Instead of login
     } else {
       setError(response.message);
     }
   };
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#edfdff] via-[#f4fffa] to-[#efffff] p-6">
