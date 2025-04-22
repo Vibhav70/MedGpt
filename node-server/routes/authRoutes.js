@@ -1,7 +1,14 @@
 const express = require("express");
 const { check } = require("express-validator");
-const { loginUser, signupUser, logoutUser, getCredits } = require("../controllers/authController");
-const authenticateUser = require("../middleware/authenticate"); // Ensure correct middleware path
+const {
+  loginUser,
+  signupUser,
+  logoutUser,
+  getCredits,
+} = require("../controllers/authController");
+const authenticateUser = require("../middleware/authenticate");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 const router = express.Router();
 
@@ -13,34 +20,37 @@ router.post("/login", [
 
 // Signup Route
 router.post("/signup", [
-  check("email", "Valid email is required").isEmail(), // ✅ Change username → email
+  check("email", "Valid email is required").isEmail(),
   check("password", "Password must be at least 6 characters").isLength({ min: 6 })
 ], signupUser);
 
-app.get("/verify-email", async (req, res) => {
+// Email Verification Route
+router.get("/verify-email", async (req, res) => {
   const { token } = req.query;
 
   try {
-    const user = await User.findOne({ verificationToken: token });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // <-- this line can fail
 
-    if (!user) {
-      return res.status(400).send("Invalid or expired token.");
+    const { email, password, customer_id } = decoded;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.redirect("http://localhost:5173/login");
     }
 
-    user.verified = true;
-    user.verificationToken = undefined;
-    await user.save();
+    await User.create({ email, password, customer_id });
 
-    res.send("Email verified successfully! You can now log in.");
+    return res.redirect("http://localhost:5173/login");
   } catch (err) {
-    res.status(500).send("Server error during verification.");
+    console.error("JWT verification error:", err.message); // 👈 Add this
+    return res.status(400).send("Invalid or expired verification link.");
   }
 });
 
 // Logout Route
 router.post("/logout", logoutUser);
 
-// ✅ Fix: Ensure `getCredits` is correctly referenced
+// Get Credits Route
 router.get("/credits", authenticateUser, getCredits);
 
 module.exports = router;

@@ -11,11 +11,19 @@ export default function SignupPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    setError("");
+  
     const response = await signup(email, password);
+  
     if (response.success) {
-      navigate("/verify-email"); // ✅ Instead of login
+      // You can also store a flag in state or context to show on next page
+      navigate("/verify-email");
     } else {
-      setError(response.message);
+      if (response.errors && Array.isArray(response.errors)) {
+        setError(response.errors[0].msg);
+      } else {
+        setError(response.message || "Something went wrong");
+      }
     }
   };
   
