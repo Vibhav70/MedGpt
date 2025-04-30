@@ -5,7 +5,7 @@ const User = require("../models/User");
 const generateCustomerId = require("../utils/generateId");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-const pendingVerifications = new Map();
+const pendingVerifications = require("../utils/pendingVerifications");
 
 // Login Function
 const loginUser = async (req, res) => {
@@ -22,7 +22,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    if (!user.verified) {
+    if (!user.isVerified) {
       return res.status(401).json({ message: "Email not verified. Please check your inbox." });
     }
 
@@ -72,7 +72,7 @@ const signupUser = async (req, res) => {
     const verificationToken = jwt.sign(
       { email, password: hashedPassword, customer_id },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "1h" }
     );
     
     console.log("Generated token:", verificationToken);
@@ -95,7 +95,7 @@ const signupUser = async (req, res) => {
     const verificationLink = `http://localhost:3000/api/auth/verify-email?token=${verificationToken}`;
 
     await transporter.sendMail({
-      from: `"Your App" <${process.env.EMAIL_USER}>`,
+      from: `"MedBookGPT" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Verify your email",
       html: `<p>Click the link below to verify your email:</p>

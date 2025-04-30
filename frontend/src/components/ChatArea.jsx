@@ -92,6 +92,21 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
             </div>
           )}
 
+          {msg.images?.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {msg.images.map((img, idx) => (
+                <div key={idx} className="bg-white/10 p-2 rounded-md">
+                  <img
+                    src={img.image_url}
+                    alt={`result-${idx}`}
+                    className="rounded w-full max-h-64 object-cover"
+                  />
+                  <p className="mt-2 text-sm text-white">{img.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Message bubble */}
           <div className="flex flex-col gap-1 md:gap-3 max-w-[90%]">
             <motion.div

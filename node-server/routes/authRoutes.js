@@ -9,8 +9,10 @@ const {
 const authenticateUser = require("../middleware/authenticate");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const pendingVerifications = require("../utils/pendingVerifications");
 
 const router = express.Router();
+const bcrypt = require("bcrypt");
 
 // Login Route
 router.post("/login", [
@@ -29,20 +31,33 @@ router.get("/verify-email", async (req, res) => {
   const { token } = req.query;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // <-- this line can fail
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const userData = pendingVerifications.get(token);
+    if (!userData) {
+      return res.status(400).send("Invalid or expired verification link.");
+    }
 
-    const { email, password, customer_id } = decoded;
+    const { email, password, customer_id } = userData;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.redirect("http://localhost:5173/login");
     }
 
-    await User.create({ email, password, customer_id });
+    await User.create({
+      email,
+      password,
+      customer_id,
+      isVerified: true,
+    });
+
+    // Cleanup
+    pendingVerifications.delete(token);
 
     return res.redirect("http://localhost:5173/login");
   } catch (err) {
-    console.error("JWT verification error:", err.message); // 👈 Add this
+    console.error("JWT verification error:", err.message);
     return res.status(400).send("Invalid or expired verification link.");
   }
 });
