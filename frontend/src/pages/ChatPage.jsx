@@ -101,17 +101,22 @@ export default function ChatPage() {
   
       const remainingCredits = creditsResponse.data.data.credits;
       if (remainingCredits <= 0) {
-        setMessages([...updatedMessages, { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false }]);
+        setMessages([
+          ...updatedMessages,
+          { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false },
+        ]);
         setIsLoading(false);
         return;
       }
+
+      console.log("User-Type : ", subscriptionType);
   
-      // ✅ Decide endpoint based on user type
-      const endpoint = user.subscription_type === "premium"
-        ? "http://127.0.0.1:8001/api/chat_premium"
-        : "http://127.0.0.1:8001/api/chat";
+      // ✅ Check if user is premium and set endpoint accordingly
+      const endpoint = subscriptionType === "premium"
+        ? "http://127.0.0.1:8001/api/chat_premium"  // Premium endpoint
+        : "http://127.0.0.1:8001/api/chat";       // Free user endpoint
   
-      // ✅ Call appropriate model
+      // ✅ Call the appropriate model (premium or free)
       const aiResponse = await axios.post(endpoint, {
         user_input: userInput,
       });
@@ -121,16 +126,15 @@ export default function ChatPage() {
       let botReply = "";
       let images = [];
   
-      // 🔹 Premium user response
-      if (user.subscription_type === "premium" && aiResponse.data.text_responses) {
+      // Handle response for Premium users
+      if (subscriptionType === "premium" && aiResponse.data.text_responses) {
         botReply = aiResponse.data.text_responses
           .map((item, i) => `**${i + 1}. ${item.book_title}** by ${item.author}\n${item.response}`)
           .join("\n\n");
   
         images = aiResponse.data.images || [];
       }
-  
-      // 🔹 Free user response
+      // Handle response for Free or Non-Premium users
       else if (aiResponse.data.answers) {
         botReply = aiResponse.data.answers
           .map((item, i) => `**${i + 1}. ${item.book_title}** by ${item.author}\n${item.response || "No response."}`)
@@ -142,28 +146,32 @@ export default function ChatPage() {
         {
           text: botReply,
           isUser: false,
-          images: images.length > 0 ? images : undefined, // Attach images only if present
+          images: images.length > 0 ? images : undefined, // Attach images only if present (for premium)
         },
       ];
   
       setMessages(newMessages);
-      setNewBotResponse(JSON.stringify(aiResponse.data)); // For animation
+      setNewBotResponse(JSON.stringify(aiResponse.data)); // Pass original response for animation
   
-      // ✅ Save chat
-      await axios.post(`${API_URL}/api/chats`, {
-        customer_id: user.customer_id,
-        query: userInput,
-        response: botReply,
-        date: new Date().toISOString(),
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      // Save chat to MongoDB
+      await axios.post(
+        `${API_URL}/api/chats`,
+        {
+          customer_id: user.customer_id,
+          query: userInput,
+          response: botReply,
+          date: new Date().toISOString(),
         },
-        withCredentials: true,
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
   
-      // ✅ Update history
+      // Update chat history
       setChatHistory((prev) => [
         {
           title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
@@ -172,15 +180,13 @@ export default function ChatPage() {
         },
         ...prev,
       ]);
-  
-      // fetchCredits();
     } catch (error) {
       console.error("Error fetching chatbot response:", error);
       setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
     }
   
     setIsLoading(false);
-  };
+  };  
   
 
   // Load chat when clicked from the history sidebar
