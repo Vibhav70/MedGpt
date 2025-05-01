@@ -14,17 +14,17 @@ async def upload_pdf(
     request: str = Form(...),  
     file: UploadFile = File(...)
 ):
-    # Ensure the uploads directory exists
+
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     
-    # Save the uploaded file
+
     file_path = os.path.join(upload_dir, file.filename)
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
     
     try:
-        # Parse the JSON string into a dictionary
+
         request_data = json.loads(request)
         
         # Validate the request data using the Pydantic model

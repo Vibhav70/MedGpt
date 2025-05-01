@@ -8,7 +8,7 @@ class ImageSearchService:
     def __init__(self):
         self.model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
         self.pc = Pinecone(api_key=settings.pinecone_api_key)
-        self.image_index = self.pc.Index("testing2")  # Your image index name
+        self.image_index = self.pc.Index("test")  # Your image index name
     
     async def search_images(self, query: str, top_k: int = 3) -> List[ImageResult]:
         query_embedding = self.model.encode(query).tolist()
@@ -20,10 +20,10 @@ class ImageSearchService:
         
         return [
             ImageResult(
-                image_url=match.metadata.get("cloudinary_url"),
+                image_url=match.metadata.get("image_url"),
                 description=match.metadata.get("text", ""),
                 score=match.score
             )
             for match in results.matches
-            if match.metadata.get("cloudinary_url")
+            if match.metadata.get("image_url")
         ]

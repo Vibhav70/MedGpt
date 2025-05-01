@@ -112,7 +112,7 @@ export default function ChatPage() {
         return;
       }
 
-      const aiResponse = await axios.post("http://127.0.0.1:8001/api/chat", {
+      const aiResponse = await axios.post("http://127.0.0.1:8000/api/chat", {
         user_input: userInput,
       });
       console.log("Backend Response:", aiResponse.data); // Log the response
