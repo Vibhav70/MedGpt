@@ -13,6 +13,7 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
   const chatRefs = useRef({});
   const [isNewResponse, setIsNewResponse] = useState(false);
   const isAnimating = useRef(false);
+  const [isExpanded, setIsExpanded] = useState(false); // To track expansion state
 
   useEffect(() => {
     if (!newBotResponse || isAnimating.current) return;
@@ -104,6 +105,46 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
                   : "bg-white text-gray-800 border border-gray-200 rounded-tl-md mr-12"
               }`}
             >
+              {msg.images?.length > 0 && (
+                <div className="mt-4">
+                  {msg.images.map((img, idx) => {
+
+                    const toggleDescription = () => {
+                      setIsExpanded((prev) => !prev); // Toggle the state
+                    };
+
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-white/10 p-2 rounded-md border border-gray-300 border-1 mb-8 relative"
+                      >
+                        <img
+                          src={img.image_url}
+                          alt={`result-${idx}`}
+                          className="rounded w-full"
+                        />
+                        <p className="mt-2 text-xs text-black">
+                          {isExpanded
+                            ? img.description // If expanded, show full description
+                            : `${img.description.slice(0, 230)}...`}{" "}
+                        </p>
+
+                        <div className="text-right absolute bottom-1 right-3">
+                        {img.description.length > 230 && ( // Only show toggle if description is long
+                          <button
+                            onClick={toggleDescription}
+                            className="text-green-700 text-xs font-semibold"
+                          >
+                            {isExpanded ? "Read Less" : "Read More"}
+                          </button>
+                        )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <ReactMarkdown className="markdown-content">
                 {msg.isUser
                   ? msg.text
@@ -112,7 +153,6 @@ export default function ChatArea({ messages, isLoading, newBotResponse }) {
                   : msg.text}
               </ReactMarkdown>
             </motion.div>
-
             {/* Copy & Listen Buttons */}
             {!msg.isUser && (
               <div className="flex gap-1 md:gap-4 ml-2 text-sm">

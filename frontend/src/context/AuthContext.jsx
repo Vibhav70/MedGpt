@@ -58,17 +58,26 @@ export function AuthProvider({ children }) {
 
   const signup = async (email, password) => {
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/signup`,
-        { email, password },
-        { withCredentials: true } // ✅ Fix: Allow cookies/session to be sent
-      );
+      const res = await fetch("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
   
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || "Signup failed" };
+      const data = await res.json();
+  
+      if (!res.ok) {
+        return { success: false, message: data.message, errors: data.errors };
+      }
+  
+      return { success: true, message: data.message };
+    } catch (err) {
+      console.log(err);
+      
+      return { success: false, message: "Something went wrong. Try again." };
     }
   };
+  
   
   const logout = async () => {
     try {

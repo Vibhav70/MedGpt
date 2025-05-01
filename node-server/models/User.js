@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
     enum: ["free", "basic", "standard", "premium"],
     default: "free"
   },
+  isVerified: { type: Boolean, default: false },
   purchase_date: { type: Date },
   expiry_date: { type: Date },
 });

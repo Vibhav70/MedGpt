@@ -85,64 +85,79 @@ export default function ChatPage() {
   // Handle sending message
   const sendMessage = async (userInput) => {
     if (!userInput.trim()) return;
-
+  
     const updatedMessages = [...messages, { text: userInput, isUser: true }];
     setMessages(updatedMessages);
-    setDisplayedText("");
     setIsLoading(true);
-
+  
     try {
       const token = localStorage.getItem("token");
+  
+      // ✅ Check if credits are sufficient
       const creditsResponse = await axios.get(`${API_URL}/api/auth/credits`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-
+  
       const remainingCredits = creditsResponse.data.data.credits;
-
       if (remainingCredits <= 0) {
         setMessages([
           ...updatedMessages,
-          {
-            text: "⚠️ Out of credits! Please purchase more credits.",
-            isUser: false,
-          },
+          { text: "⚠️ Out of credits! Please purchase more credits.", isUser: false },
         ]);
         setIsLoading(false);
         return;
       }
 
+<<<<<<< HEAD
       const aiResponse = await axios.post("http://127.0.0.1:8000/api/chat", {
+=======
+      console.log("User-Type : ", subscriptionType);
+  
+      // ✅ Check if user is premium and set endpoint accordingly
+      const endpoint = subscriptionType === "premium"
+        ? "http://127.0.0.1:8001/api/chat_premium"  // Premium endpoint
+        : "http://127.0.0.1:8001/api/chat";       // Free user endpoint
+  
+      // ✅ Call the appropriate model (premium or free)
+      const aiResponse = await axios.post(endpoint, {
+>>>>>>> 4ddee5e0a3111b23a3919df176fb307e70599c73
         user_input: userInput,
       });
-      console.log("Backend Response:", aiResponse.data); // Log the response
-
-      // Check if the response contains the expected structure
-      if (!aiResponse.data || !aiResponse.data.answers) {
-        throw new Error("Invalid response from AI model");
+  
+      if (!aiResponse.data) throw new Error("Invalid response from model");
+  
+      let botReply = "";
+      let images = [];
+  
+      // Handle response for Premium users
+      if (subscriptionType === "premium" && aiResponse.data.text_responses) {
+        botReply = aiResponse.data.text_responses
+          .map((item, i) => `**${i + 1}. ${item.book_title}** by ${item.author}\n${item.response}`)
+          .join("\n\n");
+  
+        images = aiResponse.data.images || [];
       }
-
-      // Format the response into a single string for display
-      const botReply = aiResponse.data.answers
-        .map((answer) => {
-          if (answer.response && answer.response.trim() !== "") {
-            return `**${answer.book_title}** by ${answer.author}\n${answer.response}`;
-          } else {
-            return `**${answer.book_title}** by ${answer.author}\nNo response available.`;
-          }
-        })
-        .join("\n\n");
-
+      // Handle response for Free or Non-Premium users
+      else if (aiResponse.data.answers) {
+        botReply = aiResponse.data.answers
+          .map((item, i) => `**${i + 1}. ${item.book_title}** by ${item.author}\n${item.response || "No response."}`)
+          .join("\n\n");
+      }
+  
       const newMessages = [
         ...updatedMessages,
-        { text: botReply, isUser: false },
+        {
+          text: botReply,
+          isUser: false,
+          images: images.length > 0 ? images : undefined, // Attach images only if present (for premium)
+        },
       ];
+  
       setMessages(newMessages);
-
-      // Pass the original JSON response to ChatArea
-      setNewBotResponse(JSON.stringify(aiResponse.data));
-
-      // Save the chat to MongoDB
+      setNewBotResponse(JSON.stringify(aiResponse.data)); // Pass original response for animation
+  
+      // Save chat to MongoDB
       await axios.post(
         `${API_URL}/api/chats`,
         {
@@ -159,32 +174,24 @@ export default function ChatPage() {
           withCredentials: true,
         }
       );
-
+  
       // Update chat history
       setChatHistory((prev) => [
         {
-          title:
-            userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
+          title: userInput.length > 21 ? userInput.slice(0, 21) + "..." : userInput,
           date: new Date().toLocaleDateString(),
           messages: newMessages,
         },
         ...prev,
       ]);
-
-      fetchSubscriptionStatus();
     } catch (error) {
-      console.error(
-        "Error fetching chatbot response:",
-        error.response?.data || error.message
-      );
-      setMessages([
-        ...updatedMessages,
-        { text: "Error getting response. Please try again.", isUser: false },
-      ]);
+      console.error("Error fetching chatbot response:", error);
+      setMessages([...updatedMessages, { text: "Error getting response.", isUser: false }]);
     }
-
+  
     setIsLoading(false);
-  };
+  };  
+  
 
   // Load chat when clicked from the history sidebar
   const loadChatFromHistory = async (chat) => {
