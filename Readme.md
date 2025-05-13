@@ -25,7 +25,6 @@ MedBookGPT is a powerful **multimodal Retrieval-Augmented Generation (RAG)** web
 
 ## 📼 Demo Video
 
-> 📹 **[Insert Your Video Link Here]**  
 *(https://drive.google.com/file/d/1COAF242QDSlv2GhBQtb3K62b1KZvU61a/view?usp=drive_link)*
 
 ---
